@@ -7,6 +7,7 @@ import numpy as np
 from datetime import datetime, timedelta 
 from time import gmtime, strftime
 from csv import writer
+import os
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
@@ -14,7 +15,7 @@ now = now.replace(":","-")
 
 # PARAMETERS
 list_beg = 1
-list_end = 100
+list_end = 30
 Aroonval = 40
 short_window =10
 long_window = 50
@@ -23,11 +24,16 @@ long_window = 50
 start_date = datetime.today() - timedelta(days=20)
 end_date = f'{today}'
 
-FullListToAnalyze = pd.read_csv('C:\\Users\\alexa\\OneDrive\\Desktop\\Finviz downloads\\US_STOCKS\\US_STOCKS_08_06_2020\\Overview.csv')['Ticker'].iloc[list_beg:list_end]
+# FullListToAnalyze = pd.read_csv(f"{os.path.dirname(os.path.realpath(__file__))}/Overview.csv")['Ticker'].iloc[list_beg:list_end] # Windows
+currentDirectory = os.getcwd() # Ubuntu
+FullListToAnalyze = pd.read_csv(f"{currentDirectory}/Financial.csv")['Ticker'].iloc[list_beg:list_end]
+
 
 validsymbol = []
 notvalid = []
 error = []
+
+
 
 def SignalDetection(FullListToAnalyze):
     """
@@ -104,9 +110,13 @@ def SignalDetection(FullListToAnalyze):
 
 
 # file that is going to contain valid symbols
-file_name = (f'C:\\Users\\alexa\\OneDrive\\Desktop\\Finviz downloads\\Signal Detection\\validsymbol_{today}.csv')
+file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
+
 
 def append_list_as_row(file_name,validsymbol):
+    """
+    Inserts valid symbols in a csv in the current directory
+    """
     # Open file in append mode
     with open(file_name, 'a+', newline='') as write_obj:
         # Create a writer object from csv module
