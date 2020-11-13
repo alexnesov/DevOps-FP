@@ -125,10 +125,10 @@ def csvAppend(df):
     global init
 
     if init == True:
-        df.to_csv('Historical/marketdata.csv')
+        df.to_csv('Historical/marketdata.csv', index=False)
         init = False
     else:
-        df.to_csv('Historical/marketdata.csv', mode='a', header=False)
+        df.to_csv('Historical/marketdata.csv', mode='a', index=False, header=False)
 
 
 
