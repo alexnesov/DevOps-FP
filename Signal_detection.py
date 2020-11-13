@@ -15,7 +15,7 @@ now = now.replace(":","-")
 
 # PARAMETERS
 list_beg = 1
-list_end = 30
+list_end = 50
 Aroonval = 40
 short_window =10
 long_window = 50
@@ -28,89 +28,108 @@ end_date = f'{today}'
 currentDirectory = os.getcwd() # Ubuntu
 FullListToAnalyze = pd.read_csv(f"{currentDirectory}/Financial.csv")['Ticker'].iloc[list_beg:list_end]
 
+# file that is going to contain valid symbols
+file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
+
 
 validsymbol = []
 notvalid = []
 error = []
+init = True
 
 
-
-def SignalDetection(FullListToAnalyze):
+def SignalDetection(df, tick):
     """
     This function downloads prices for desired quotes (those in the parameter)
     and then tries to catch signals for selected timeframe.
     Stocks for which we catched a signal are stored in variable "validsymbol"
 
-    :param p1: an array of tickers
+    :param p1: df for a tick
     """
-    for tick in FullListToAnalyze:
-        try:
-            print(f"New https connection for {tick}")
-            df = yf.download(tick, start = "2016-01-01", end = f"{today}", period = "1d")
-        except KeyError:
-            print(f'Error for {tick}')
-            error.append(tick)
 
-        close = df["Close"].to_numpy()
-        high = df["High"].to_numpy()
-        low = df["Low"].to_numpy()
+    close = df["Close"].to_numpy()
+    high = df["High"].to_numpy()
+    low = df["Low"].to_numpy()
 
-        # Aroon
-        aroonDOWN, aroonUP = talib.AROON(high=high, low=low,timeperiod=Aroonval)  ####
-        # RSI
-        real = talib.RSI(close, timeperiod=14)
+    # Aroon
+    aroonDOWN, aroonUP = talib.AROON(high=high, low=low,timeperiod=Aroonval)  ####
+    # RSI
+    real = talib.RSI(close, timeperiod=14)
 
-        df['RSI'] = real
-        df['Aroon Down'] = aroonDOWN
-        df['Aroon Up'] = aroonUP
-        df['signal'] = pd.Series(np.zeros(len(df)))
-        df['signal_aroon'] = pd.Series(np.zeros(len(df)))
-        df = df.reset_index()
+    df['RSI'] = real
+    df['Aroon Down'] = aroonDOWN
+    df['Aroon Up'] = aroonUP
+    df['signal'] = pd.Series(np.zeros(len(df)))
+    df['signal_aroon'] = pd.Series(np.zeros(len(df)))
+    df = df.reset_index()
+    
+    # Moving averages
+    df['short_mavg'] = df['Close'].rolling(window=short_window, min_periods=1, center=False).mean()
+    df['long_mavg'] = df['Close'].rolling(window=long_window, min_periods=1, center=False).mean()
 
-        df['short_mavg'] = df['Close'].rolling(window=short_window, min_periods=1, center=False).mean()
-        df['long_mavg'] = df['Close'].rolling(window=long_window, min_periods=1, center=False).mean()
+    # When 'Aroon Up' crosses 'Aroon Down' from below
+    df["signal"][short_window:] =np.where(df['short_mavg'][short_window:] > df['long_mavg'][short_window:], 1,0)
+    df["signal_aroon"][short_window:] =np.where(df['Aroon Down'][short_window:] < df['Aroon Up'][short_window:], 1,0)
 
-        # When 'Aroon Up' crosses 'Aroon Down' from below
-        df["signal"][short_window:] =np.where(df['short_mavg'][short_window:] > df['long_mavg'][short_window:], 1,0)
-        df["signal_aroon"][short_window:] =np.where(df['Aroon Down'][short_window:] < df['Aroon Up'][short_window:], 1,0)
+    df['positions'] = df['signal'].diff()
+    df['positions_aroon'] = df['signal_aroon'].diff()
+    df['positions_aroon'].value_counts()
 
-        df['positions'] = df['signal'].diff()
-        df['positions_aroon'] = df['signal_aroon'].diff()
-        df['positions_aroon'].value_counts()
+    # Trend reversal detection
+    # Aroon alone doesn't give us enough information.
+    # Too many false signals are given
+    # We blend moving averages crossing strategy
+    df['doubleSignal'] = np.where(
+        (df["Aroon Up"] > df["Aroon Down"]) & (df['positions']==1) & (df["Aroon Down"]<75) &(df["Aroon Up"]>55),
+        1,0)
 
-        # Trend reversal detection
-        # Aroon alone doesn't give us enough information.
-        # Too many false signals are given
-        # We blend moving averages crossing strategy
-        df['doubleSignal'] = np.where(
-            (df["Aroon Up"] > df["Aroon Down"]) & (df['positions']==1) & (df["Aroon Down"]<75) &(df["Aroon Up"]>55),
-            1,0)
+    df['symbol'] = tick
+    csvAppend(df)                                           # FUNC
 
-        # Checking if signal is present in the last x days
-        DFfinalsignal = df[['Date','doubleSignal']]
-        DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
-        mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
-        DFfinalsignal = DFfinalsignal.loc[mask]
-        true_false = list(DFfinalsignal['doubleSignal'].isin(["1"]))
+    return df
 
-        # Append the selected symbols to "validsymbol"
-        if True in true_false:
-            validsymbol.append(tick)
-            print(f'Ok for {tick}')
-        else:
-            print(f'No signal for this time frame for {tick}')
-            notvalid.append(tick)
+
+
+def lastSignalsDetection(signals_df, tick, start_date, end_date):
+    """
+
+    param: df (one tick) with all signal already detected
+
+    Checking if signal is present in the last x days (start_date & end_date)
+    Func doesn't return anything, it appends selected stock for given time interval in empty list
+    (list = validsymbol)
+    """
+    DFfinalsignal = signals_df[['Date','doubleSignal']]
+    DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
+    mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
+    DFfinalsignal = DFfinalsignal.loc[mask]
+    true_false = list(DFfinalsignal['doubleSignal'].isin(["1"]))
+
+
+    # Append the selected symbols to empty initialized list "validsymbol"
+    if True in true_false:
+        validsymbol.append(tick)
+        print(f'Ok for {tick}')
+    else:
+        print(f'No signal for this time frame for {tick}')
+        notvalid.append(tick)
 
     print(f"Number not valid: {len(notvalid)}")
 
-# It seems like there needs to be a durable slowdown in the preceding weeks also
-# Let's add this level of complexity
-
-#==================================================================================
 
 
-# file that is going to contain valid symbols
-file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
+def csvAppend(df):
+    """
+    appends df corresponding to each stock to a final csv, that is then going to be send to RDS
+    """
+    global init
+
+    if init == True:
+        df.to_csv('Historical/marketdata.csv')
+        init = False
+    else:
+        df.to_csv('Historical/marketdata.csv', mode='a', header=False)
+
 
 
 def append_list_as_row(file_name,validsymbol):
@@ -125,6 +144,20 @@ def append_list_as_row(file_name,validsymbol):
         csv_writer.writerow(validsymbol)
 
 
-if __name__ == "__main__":
-    SignalDetection(FullListToAnalyze)
+
+def main():
+    for tick in FullListToAnalyze:
+        try:
+            print(f"New https connection for {tick}")
+            df = yf.download(tick, start = "2019-01-01", end = f"{today}", period = "1d")
+            df = SignalDetection(df, tick)
+        except KeyError:
+            print(f'Error for {tick}')
+            error.append(tick)
+    
+    lastSignalsDetection(df, tick, start_date, end_date)
     append_list_as_row(file_name,validsymbol)
+    
+
+if __name__ == "__main__":
+    main()
