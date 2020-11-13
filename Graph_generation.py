@@ -19,6 +19,7 @@ Aroonval = 40
 short_window =10
 long_window = 50
 
+
 def extractFromCSV(tick):
     """
     """
@@ -90,9 +91,11 @@ def plotting(df):
     plt.legend()
 
 
+
 def main():
     extract = extractFromCSV(tick)
     plotting(extract)
+
 
 
 if __name__ == "__main__":
@@ -104,7 +107,7 @@ if __name__ == "__main__":
 
 
 
-extract.dtypes
+""" extract.dtypes
 Date               datetime64[ns]
 Open                      float64
 High                      float64
@@ -123,4 +126,4 @@ positions                 float64
 positions_aroon           float64
 doubleSignal                int64
 symbol                     object
-dtype: object
+dtype: object """
