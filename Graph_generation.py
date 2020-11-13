@@ -12,74 +12,13 @@ today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 # BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick = 'ACU'
+tick = 'ABM'
 
 #Parameters
 Aroonval = 40
 short_window =10
 long_window = 50
 
-def SignalDetection(tick):
-    """
-    Catches signal(s) the whole desired time frame
-
-    :param 1: symbol
-    :return: A dataframe containing the signals
-    """
-    df = yf.download(tick, start = "2016-01-01", end = f"{today}", period = "1d")
-
-    close = df["Close"].to_numpy()
-    high = df["High"].to_numpy()
-    low = df["Low"].to_numpy()
-    volume = df["Volume"].to_numpy()
-
-    # Aroon
-    aroonDOWN, aroonUP = talib.AROON(high=high, low=low,timeperiod=Aroonval)  ####
-    # RSI
-    real = talib.RSI(close, timeperiod=14)
-
-    #OBV
-    volume_float = np.array([float(x) for x in volume])
-    obv = talib.OBV(close, volume_float)
-
-    df['RSI'] = real
-    df['Aroon Down'] = aroonDOWN
-    df['Aroon Up'] = aroonUP
-    df['signal'] = pd.Series(np.zeros(len(df)))
-    df['signal_aroon'] = pd.Series(np.zeros(len(df)))
-    df['obv'] = obv
-
-    df = df.reset_index()
-
-    df['short_mavg'] = df['Close'].rolling(window=short_window, min_periods=1, center=False).mean()
-    df['long_mavg'] = df['Close'].rolling(window=long_window, min_periods=1, center=False).mean()
-
-    # When 'Aroon Up' crosses 'Aroon Down' from below
-    df["signal"][short_window:] =np.where(df['short_mavg'][short_window:] > df['long_mavg'][short_window:], 1,0)
-    df["signal_aroon"][short_window:] =np.where(df['Aroon Down'][short_window:] < df['Aroon Up'][short_window:], 1,0)
-
-    df['positions'] = df['signal'].diff()
-    df['positions_aroon'] = df['signal_aroon'].diff()
-
-    df['positions_aroon'].value_counts()
-
-    df['doubleSignal'] = np.where(
-        (df["Aroon Up"] > df["Aroon Down"]) & (df['positions']==1) & (df["Aroon Down"]<75) &(df["Aroon Up"]>55),
-        1,0)
-
-    # Checking if signal is present in the last x days
-    start_date = datetime.today() - timedelta(days=50)
-    end_date = f'{today}'
-
-    DFfinalsignal = df[['Date','doubleSignal']]
-    DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
-    mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
-    DFfinalsignal = DFfinalsignal.loc[mask]
-    true_false = list(DFfinalsignal['doubleSignal'].isin(["1"]))
-
-    return df
-
-#=============== Plotting
 
 def plotting(df):
     """
@@ -133,7 +72,6 @@ def plotting(df):
 
     plt.setp(stock.get_xticklabels(), visible=False)
     plt.setp(aroon.get_xticklabels(), visible=False)
-    plt.setp(rsi.get_xticklabels(), visible=False)
 
     stock.grid(color='grey', linestyle='-', linewidth=0.25, alpha=0.6)
     aroon.grid(color='grey', linestyle='-', linewidth=0.25, alpha=0.6)
@@ -144,3 +82,30 @@ def plotting(df):
 if __name__ == "__main__":
     df = SignalDetection(tick)
     plotting(df)
+
+
+
+
+
+
+
+""" df.dtypes
+Date               datetime64[ns]
+Open                      float64
+High                      float64
+Low                       float64
+Close                     float64
+Adj Close                 float64
+Volume                      int64
+RSI                       float64
+Aroon Down                float64
+Aroon Up                  float64
+signal                    float64
+signal_aroon              float64
+obv                       float64
+short_mavg                float64
+long_mavg                 float64
+positions                 float64
+positions_aroon           float64
+doubleSignal                int64
+dtype: object """
