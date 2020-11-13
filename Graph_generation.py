@@ -19,6 +19,16 @@ Aroonval = 40
 short_window =10
 long_window = 50
 
+def extractFromCSV(tick):
+    """
+    """
+    imported = pd.read_csv('./Historical_2018_01_01/marketdata.csv')
+    extract = imported.loc[imported['symbol']==f'{tick}']
+    extract['Date'] = pd.to_datetime(extract['Date'])
+
+    return extract
+
+
 
 def plotting(df):
     """
@@ -79,9 +89,14 @@ def plotting(df):
 
     plt.legend()
 
+
+def main():
+    extract = extractFromCSV(tick)
+    plotting(extract)
+
+
 if __name__ == "__main__":
-    df = SignalDetection(tick)
-    plotting(df)
+    main()
 
 
 
@@ -89,7 +104,7 @@ if __name__ == "__main__":
 
 
 
-""" df.dtypes
+extract.dtypes
 Date               datetime64[ns]
 Open                      float64
 High                      float64
@@ -102,10 +117,10 @@ Aroon Down                float64
 Aroon Up                  float64
 signal                    float64
 signal_aroon              float64
-obv                       float64
 short_mavg                float64
 long_mavg                 float64
 positions                 float64
 positions_aroon           float64
 doubleSignal                int64
-dtype: object """
+symbol                     object
+dtype: object
