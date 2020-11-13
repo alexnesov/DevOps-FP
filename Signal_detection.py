@@ -151,11 +151,11 @@ def main():
             print(f"New https connection for {tick}")
             df = yf.download(tick, start = "2019-01-01", end = f"{today}", period = "1d")
             df = SignalDetection(df, tick)
+            lastSignalsDetection(df, tick, start_date, end_date)
         except KeyError:
             print(f'Error for {tick}')
             error.append(tick)
     
-    lastSignalsDetection(df, tick, start_date, end_date)
     append_list_as_row(file_name,validsymbol)
     
 
