@@ -38,13 +38,15 @@ error = []
 init = True
 
 
-def SignalDetection(df, tick):
+def SignalDetection(df, tick, *args):
     """
     This function downloads prices for desired quotes (those in the parameter)
     and then tries to catch signals for selected timeframe.
     Stocks for which we catched a signal are stored in variable "validsymbol"
 
-    :param p1: df for a tick
+    :param p1: dataframe of eod data
+    :param p2: ticker
+    :returns: df with signals
     """
 
     close = df["Close"].to_numpy()
@@ -93,7 +95,7 @@ def SignalDetection(df, tick):
 def lastSignalsDetection(signals_df, tick, start_date, end_date):
     """
 
-    param: df (one tick) with all signal already detected
+    param: df (one tick) with all signals already detected
 
     Checking if signal is present in the last x days (start_date & end_date)
     Func doesn't return anything, it appends selected stock for given time interval in empty list
@@ -125,10 +127,10 @@ def csvAppend(df):
     global init
 
     if init == True:
-        df.to_csv('Historical/marketdata.csv', index=False)
+        df.to_csv('Historical_2018_01_01/marketdata.csv', index=False)
         init = False
     else:
-        df.to_csv('Historical/marketdata.csv', mode='a', index=False, header=False)
+        df.to_csv('Historical_2018_01_01/marketdata.csv', mode='a', index=False, header=False)
 
 
 
@@ -149,7 +151,7 @@ def main():
     for tick in FullListToAnalyze:
         try:
             print(f"New https connection for {tick}")
-            df = yf.download(tick, start = "2019-01-01", end = f"{today}", period = "1d")
+            df = yf.download(tick, start = "2018-01-01", end = f"{today}", period = "1d")
             df = SignalDetection(df, tick)
             lastSignalsDetection(df, tick, start_date, end_date)
         except KeyError:
