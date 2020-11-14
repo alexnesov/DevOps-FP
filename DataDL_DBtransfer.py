@@ -4,6 +4,7 @@ import pymysql
 import os
 from datetime import datetime, timedelta 
 import time
+# pass by reference best practices
 
 currentDirectory = os.getcwd() # Ubuntu
 
