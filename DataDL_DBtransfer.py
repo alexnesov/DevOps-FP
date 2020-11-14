@@ -13,64 +13,51 @@ db_endp = os.environ.get('aws_db_endpoint')
 today = str(datetime.today().strftime('%Y-%m-%d'))
 db = pymysql.connect(host=f'{db_endp}',user=f'{db_user}',password=f'{db_pass}',database='marketdata',local_infile=True)
 listOfTicks = pd.read_csv(f"{currentDirectory}/Financial.csv")['Ticker']
-init = True
-
-lenList = len(listOfTicks)
-lastTick = listOfTicks[lenList-1]
 
 
+# If set to "True" will overwrite csw, otherwise it will append new data
+init_csv = True
+batch_size = 5
 
 
-def csvAppend(df):
+def csvAppend(df, init_csv):
     """
     appends df corresponding to each stock to a final csv, that is then going to be send to RDS
     """
-    global init
 
-    if init == True:
-        df.to_csv('./Historical/marketdata_2017_01_01.csv', index=False)
-        init = False
+    if init_csv == True:
+        df.to_csv('./Historical/marketdata_2017_01_01_test.csv', index=False)
+        init_csv = False
     else:
-        df.to_csv('./Historical/marketdata_2017_01_01.csv', mode='a', index=False, header=False)
+        df.to_csv('./Historical/marketdata_2017_01_01_test.csv', mode='a', index=False, header=False)
 
 
-batch_init = True
-batch_size = 50
-batchLimit = batch_size
-nextBatchLimit = 0
-currentGlobalTick = listOfTicks[0]
-counter = 0
 
-def nextBatch(listOfTicks):
+
+def nextBatch(previous_limit):
     """
-    The objective is not to overload API request
-    Hence we create this function to create batches of 100 API requests
+    The objective to create batches of x API requests,
+    to not overload yfinance
     """
-    global batchLimit
-    global nextBatchLimit
 
-    nextBatchLimit = nextBatchLimit + batch_size
-    batch = listOfTicks[batchLimit:nextBatchLimit]
-
-    # re-initilization
-    batchLimit = nextBatchLimit
-    return batch
-
-
-
-def getData(batch):    
-    """
-    After 100 requests (i.e batches function) we set a 10 seconds pause
-    """
-    global currentGlobalTick
     global batch_init
-    global counter
-    
+
     if batch_init==True:
         batch = listOfTicks[0:batch_size]
         batch_init=False
     else:
-        batch = nextBatch(listOfTicks)
+        batch =  listOfTicks[previous_limit:previous_limit+batch_size]
+        previous_limit = previous_limit + batch_size
+
+    return batch, previous_limit
+
+
+def getData(currentGlobalTick, counter, previous_limit):    
+    """
+    After x requests (par batch) we set a x seconds pause
+    """
+    
+    batch, previous_limit = nextBatch(previous_limit)       # Func
 
     for tick in batch:
         print("Tick = " + tick + f" n:{counter}")
@@ -79,13 +66,48 @@ def getData(batch):
             df = yf.download(tick, start = "2017-01-01", end = f"{today}", period = "1d").reset_index()
             df['ticker'] = tick
             currentGlobalTick = tick
-            csvAppend(df)
-            counter = counter + 1
+            csvAppend(df, init_csv)
+            counter += 1
         except KeyError:
             print(f'Error for {tick}')
             error.append(tick)
-    time.sleep(10)
-    batch = nextBatch(listOfTicks)
+
+    time.sleep(5)
+
+    return currentGlobalTick, counter
+
+
+
+
+def main(init_csv, batch_size):
+    batch_init = True
+    previous_limit = batch_size
+    currentGlobalTick = listOfTicks[0]
+    counter = 0
+
+    while str(currentGlobalTick) != str(listOfTicks[-1:]):
+        currentGlobalTick, counter = getData(currentGlobalTick, counter, previous_limit)
+
+
+
+
+
+
+if __name__ == "__main__":
+    main(init_csv, batch_size)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -107,12 +129,3 @@ def sendToDB(tick):
         LINES TERMINATED BY '\n'\
         IGNORE 1 LINES;")
     cursor.execute(query)
-
-
-
-def main():
-    while str(currentGlobalTick) != str(listOfTicks[-1:]):
-        getData(listOfTicks)
-
-if __name__ == "__main__":
-    main()
