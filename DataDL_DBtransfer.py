@@ -13,89 +13,85 @@ db_pass = os.environ.get('aws_db_pass')
 db_endp = os.environ.get('aws_db_endpoint')
 today = str(datetime.today().strftime('%Y-%m-%d'))
 db = pymysql.connect(host=f'{db_endp}',user=f'{db_user}',password=f'{db_pass}',database='marketdata',local_infile=True)
-listOfTicks = pd.read_csv(f"{currentDirectory}/Financial.csv")['Ticker']
+listOfTicks = pd.read_csv("Historical/Financial.csv")['Ticker']
 
 
-# If set to "True" will overwrite csw, otherwise it will append new data
-init_csv = True
+# batch_size is the number of tick to get per interval of API requests. then the programm
+# will pause for "wait" seconds
 batch_size = 5
+wait_secs = 5
+currentGlobalTick = listOfTicks[0]
 
 
-def csvAppend(df, init_csv):
-    """
-    appends df corresponding to each stock to a final csv, that is then going to be send to RDS
-    """
+class getData():
 
-    if init_csv == True:
-        df.to_csv('./Historical/marketdata_2017_01_01_test.csv', index=False)
-        init_csv = False
-    else:
-        df.to_csv('./Historical/marketdata_2017_01_01_test.csv', mode='a', index=False, header=False)
+    def __init__(self,batch_size, wait_secs, init_csv=True):
 
+        # If init_csv to "True" it will overwrite csw, otherwise it will append new data
+        self.init_csv = init_csv
+        self.batch_init = True
+        self.previous_limit = batch_size
+        self.counter = 0
+        self.batch_size = batch_size
+        # batch is going to be a list of stocks
+        self.batch = []
+        self.wait_secs = wait_secs
 
+    def csvAppend(self, df):
+        """
+        appends df corresponding to each stock to a final csv, that is then going to be send to RDS
+        """
 
-
-def nextBatch(previous_limit):
-    """
-    The objective to create batches of x API requests,
-    to not overload yfinance
-    """
-
-    global batch_init
-
-    if batch_init==True:
-        batch = listOfTicks[0:batch_size]
-        batch_init=False
-    else:
-        batch =  listOfTicks[previous_limit:previous_limit+batch_size]
-        previous_limit = previous_limit + batch_size
-
-    return batch, previous_limit
+        if self.init_csv == True:
+            df.to_csv('./Historical/marketdata_2017_01_01_test.csv', index=False)
+            self.init_csv = False
+        else:
+            df.to_csv('./Historical/marketdata_2017_01_01_test.csv', mode='a', index=False, header=False)
 
 
-def getData(currentGlobalTick, counter, previous_limit):    
-    """
-    After x requests (par batch) we set a x seconds pause
-    """
-    
-    batch, previous_limit = nextBatch(previous_limit)       # Func
+    def nextBatch(self):
+        """
+        The objective to create batches of x API requests,
+        to not overload yfinance
+        """
 
-    for tick in batch:
-        print("Tick = " + tick + f" n:{counter}")
-        try:
-            print(f"New https connection for {tick}")
-            df = yf.download(tick, start = "2017-01-01", end = f"{today}", period = "1d").reset_index()
-            df['ticker'] = tick
-            currentGlobalTick = tick
-            csvAppend(df, init_csv)
-            counter += 1
-        except KeyError:
-            print(f'Error for {tick}')
-            error.append(tick)
-
-    time.sleep(5)
-
-    return currentGlobalTick, counter
+        if self.batch_init==True:
+            self.batch = listOfTicks[0:batch_size]
+            self.batch_init=False
+        else:
+            self.batch =  listOfTicks[self.previous_limit:self.previous_limit+batch_size]
+            self.previous_limit = self.previous_limit + batch_size
 
 
+    def DL(self):    
+        """
+        After x requests (par batch) we set a x seconds pause
+        """
+        global currentGlobalTick
 
+        self.nextBatch()       # Func
 
-def main(init_csv, batch_size):
-    batch_init = True
-    previous_limit = batch_size
-    currentGlobalTick = listOfTicks[0]
-    counter = 0
+        for tick in self.batch:
+            print("Tick = " + tick + f" n:{self.counter}")
+            try:
+                print(f"New https connection for {tick}")
+                df = yf.download(tick, start = "2017-01-01", end = f"{today}", period = "1d").reset_index()
+                df['ticker'] = tick
+                currentGlobalTick = tick
+                self.csvAppend(df)
+                self.counter += 1
+            except KeyError:
+                print(f'Error for {tick}')
+                error.append(tick)
 
-    while str(currentGlobalTick) != str(listOfTicks[-1:]):
-        currentGlobalTick, counter = getData(currentGlobalTick, counter, previous_limit)
-
-
-
+        time.sleep(wait_secs)
 
 
 
 if __name__ == "__main__":
-    main(init_csv, batch_size)
+    pullData = getData(batch_size, wait_secs)
+    while str(currentGlobalTick) != str(listOfTicks[-1:]):
+        pullData.DL()
 
 
 
