@@ -9,7 +9,7 @@ indices = ["NASDAQ", "NYSE"]
 
 class batchesToSQL():
     """
-    Note: A stock can be listed on both indixes.
+    Note: A stock can be listed on both indices.
     We need hence to get ridd of duaplicates.
     """
 
