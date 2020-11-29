@@ -42,16 +42,23 @@ class batchesToSQL():
 
 
 
-    def saveNoHeader():
-        """
-        useful for transfer to MYSQL schema
-        """
-        nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15.csv')
-        nyse = pd.read_csv('Historical/EODDATA/NYSE_Y15.csv') 
-        nasdaq.to_csv(f'Historical/EODDATA/NASDAQ_Y15_noHeader.csv',header=False, index=False)
-        nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_noHeader.csv',header=False, index=False)
+def saveNoHeader():
+    """
+    useful for transfer to MYSQL schema
+    """
+    nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15.csv')
+    nyse = pd.read_csv('Historical/EODDATA/NYSE_Y15.csv') 
+    nasdaq.to_csv(f'Historical/EODDATA/NASDAQ_Y15_noHeader.csv',header=False, index=False)
+    nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_noHeader.csv',header=False, index=False)
 
 
+def dateParsing();
+    """
+    Getting all distinct dates values to see how to parse them,
+    Because current format is not accepted by MySQL schema check (DATE format)
+    """
+    nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15_noHeader.csv')
+    nyse = pd.read_csv('Historical/EODDATA/NYSE_Y15_noHeader.csv') 
 
 
 if __name__ == "__main__":
