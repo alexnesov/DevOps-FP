@@ -101,15 +101,30 @@ def dateParsing():
     nasdaq['Date'] = nasdaq['Date'].map(lambda x: keymap_replace(x,mapping))
     nyse['Date'] = nyse['Date'].map(lambda x: keymap_replace(x,mapping))
 
-    # Useful for transfer to MYSQL schema
+    nasdaq.to_csv(f'Historical/EODDATA/NASDAQ_Y15_parsed.csv', index=False)
+    nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_parsed.csv', index=False)
+
+
+def dateFormat():
+    """
+    """
+    # Need yyyy-dd-mm
+    nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15_parsed.csv')
+    nyse = pd.read_csv('Historical/EODDATA/NYSE_Y15_parsed.csv') 
+
+    nasdaq['Date'] = pd.to_datetime(nasdaq.Date)
+    nasdaq['Date'] = nasdaq['Date'].dt.strftime('%Y-%d-%m')
+
+    nyse['Date'] = pd.to_datetime(nyse.Date)
+    nyse['Date'] = nyse['Date'].dt.strftime('%Y-%d-%m')
+
+    # Useful for transfer to MYSQL schema (no header)
     nasdaq.to_csv(f'Historical/EODDATA/NASDAQ_Y15_noHeader.csv',header=False, index=False)
     nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_noHeader.csv',header=False, index=False)
 
 
-
-
-
-
+dateParsing()
+dateFormat()
 
 
 
