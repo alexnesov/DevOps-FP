@@ -5,7 +5,6 @@ import os
 import time
 
 years = [2015,2016,2017,2018,2019,2020]
-months = list(range(1,13)) #-1
 indices = ["NASDAQ", "NYSE"]
 
 
@@ -43,8 +42,21 @@ class batchesToSQL():
 
 
 
+    def saveNoHeader():
+        """
+        useful for transfer to MYSQL schema
+        """
+        nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15.csv')
+        nyse = pd.read_csv('Historical/EODDATA/NYSE_Y15.csv') 
+        nasdaq.to_csv(f'Historical/EODDATA/NASDAQ_Y15_noHeader.csv',header=False, index=False)
+        nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_noHeader.csv',header=False, index=False)
+
+
+
 
 if __name__ == "__main__":
     for index in indices:
         start = batchesToSQL(index)
         start.unifyFiles()
+
+    saveNoHeader()

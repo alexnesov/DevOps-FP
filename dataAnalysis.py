@@ -21,8 +21,8 @@ class FindCommonStocks():
         huge dataframe
         """
         df_yfinance = pd.read_csv('Historical/marketdata_2017_01_01_DB.csv')['ticker']
-        yfDistincs = df_yfinance.value_counts().to_frame().reset_index()
-        self.yfinancelist = yfDistincs['index'].to_list()
+        yfDistincts = df_yfinance.value_counts().to_frame().reset_index()
+        self.yfinancelist = yfDistincts['index'].to_list()
         self.yfinancelist.sort()
         self.NASDAQList = pd.read_csv('Historical/NASDAQ/NASDAQ_20201118.csv').Symbol.to_list()
         self.NYSEList = pd.read_csv('Historical/NYSE/NYSE_20201120.csv').Symbol.to_list()
@@ -37,8 +37,6 @@ class FindCommonStocks():
         inter_yf_NYSE = list(setYfinance.intersection(setNYSE))
 
         self.commonStocksAll = inter_yf_NASDAQ + inter_yf_NYSE
-        print(self.commonStocksAll)
-        print(len(self.commonStocksAll))
         
     def toCSV(self):
         """
@@ -49,6 +47,8 @@ class FindCommonStocks():
             writer = csv.writer(csvfile)
             for tick in self.commonStocksAll:
                 writer.writerows([[tick]])
+
+
 
 
 def format():

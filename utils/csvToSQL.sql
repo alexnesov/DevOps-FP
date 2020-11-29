@@ -4,6 +4,15 @@ ticker VARCHAR(100)
 );
 
 
+CREATE TABLE NASDAQ_15 (`Symbol` VARCHAR(30), `Date` DATE, \
+`Open` FLOAT, High FLOAT, Low FLOAT, `Close` FLOAT, Volume INT \
+);
+
+CREATE TABLE NYSE_15 (`Symbol` VARCHAR(30), `Date` DATE, \
+`Open` FLOAT, High FLOAT, Low FLOAT, `Close` FLOAT, Volume INT \
+);
+
+
 SHOW VARIABLES LIKE "secure_file_priv";
 
 
