@@ -107,24 +107,29 @@ def dateParsing():
 
 def dateFormat():
     """
+    As-is: dd-mm-yyyy
+    To-be: yyyy-mm-dd (standard MySQL format)
     """
-    # Need yyyy-dd-mm
+    
+    pd.set_option('display.min_rows', 20)
+
     nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15_parsed.csv')
     nyse = pd.read_csv('Historical/EODDATA/NYSE_Y15_parsed.csv') 
 
-    nasdaq['Date'] = pd.to_datetime(nasdaq.Date)
-    nasdaq['Date'] = nasdaq['Date'].dt.strftime('%Y-%d-%m')
+    # Problems with strftime interpretation, probably due to size of the DF
+    # Reformating date manually.
+    temp = nasdaq['Date'].str.split('-', expand=True)
+    nasdaq['Date'] = temp[2]+'-'+temp[1]+'-'+temp[0]
 
-    nyse['Date'] = pd.to_datetime(nyse.Date)
-    nyse['Date'] = nyse['Date'].dt.strftime('%Y-%d-%m')
+    temp = nyse['Date'].str.split('-', expand=True)
+    nyse['Date'] = temp[2]+'-'+temp[1]+'-'+temp[0]
 
     # Useful for transfer to MYSQL schema (no header)
     nasdaq.to_csv(f'Historical/EODDATA/NASDAQ_Y15_noHeader.csv',header=False, index=False)
     nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_noHeader.csv',header=False, index=False)
 
 
-dateParsing()
-dateFormat()
+
 
 
 
@@ -136,6 +141,6 @@ if __name__ == "__main__":
     for index in indices:
         start = batchesToSQL(index)
         start.unifyFiles()
+
         dateParsing()
-
-
+        dateFormat()
