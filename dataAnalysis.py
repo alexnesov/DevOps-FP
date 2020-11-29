@@ -41,15 +41,16 @@ class FindCommonStocks():
         print(len(self.commonStocksAll))
         
     def toCSV(self):
+        """
+        :Input: Simple list 
+        :Returns: Csv file, one element per row
+        """
         with open('Historical/commonStocksAll.csv','w') as csvfile:
             writer = csv.writer(csvfile)
             for tick in self.commonStocksAll:
                 writer.writerows([[tick]])
 
-""" 
-        csvwriter = csv.writer(file)
-        csvwriter.writerows([[self.commonStocksAll]])
- """
+
 def format():
     newdyfinance = dfyfinance.dropna()
     newdyfinance.to_csv('marketdata_2017_01_01_DB_no_nan.csv', header=False,index=False)
