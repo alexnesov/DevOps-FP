@@ -100,29 +100,3 @@ if __name__ == "__main__":
 
 
 
-
-
-
-
-
-
-
-
-def createTables(tick):
-    cursor = db.cursor()
-    query= (f"CREATE TABLE {tick} (Open FLOAT(30), \
-        High FLOAT(30), Low FLOAT(30), Close FLOAT(30), Adj_Close FLOAT(30), \
-            Volume FLOAT(30));")
-    cursor.execute(query)
-
-
-
-def sendToDB(tick):
-    cursor = db.cursor()
-
-    query= (f"LOAD DATA LOCAL INFILE './Historical/{tick}'\
-        INTO TABLE {tick} \
-        COLUMNS TERMINATED BY ','\
-        LINES TERMINATED BY '\n'\
-        IGNORE 1 LINES;")
-    cursor.execute(query)
