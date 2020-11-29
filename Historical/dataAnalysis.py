@@ -1,18 +1,8 @@
 import pandas as pd
 
-df_yfinance = pd.read_csv('marketdata_2017_01_01_DB.csv')
-
-
-dfyfinance.iloc[140824:140828]
 len(dfyfinance)
 dfyfinance.dtypes
 
-
-
-
-test = df.ticker.value_counts().to_frame().reset_index()
-yfinancelist = test['index'].to_list()
-yfinancelist.sort()
 
 class commonStocks():
     """
@@ -20,12 +10,23 @@ class commonStocks():
     NASDAQ eodData list and yfinance list
     """
     def __init__(self):
-        pass
+        self.yfinancelist = []
+        self.NASDAQList = []
+        self.NYSEList = []
 
     def loadLists():
-        df_yfinance = pd.read_csv('marketdata_2017_01_01_DB.csv')
-        df_eodData_NASDAQ = pd.read_csv('NASDAQ/NASDAQ_20201118.csv')
-        df_eodData_NYSE = pd.read_csv('NYSE/NYSE_20201120.csv')
+        """
+        yfinanceList = special manipulation because we have to find 
+        the distinct values (method "value_counts") among the
+        huge dataframe
+        """
+        
+        df_yfinance = pd.read_csv('marketdata_2017_01_01_DB.csv')['ticker']
+        df_yfinance.ticker.value_counts().to_frame().reset_index()
+        yfinancelist = test['index'].to_list()
+        self.yfinancelist.sort()
+        self.NASDAQList = pd.read_csv('NASDAQ/NASDAQ_20201118.csv').Symbol.to_list()
+        self.NYSEList = pd.read_csv('NYSE/NYSE_20201120.csv').Symbol.to_list()
 
     def 
         sources = {}
@@ -38,9 +39,10 @@ def format():
 
 
 
+if __name__ == "__main__":
+    start = commonStocks()
+    start.loadLists
 
 
 
-
-################################
 
