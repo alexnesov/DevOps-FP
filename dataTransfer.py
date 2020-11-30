@@ -105,33 +105,30 @@ def dateParsing():
     nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_parsed.csv', index=False)
 
 
-def dateFormat():
+import pandas as pd
+nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15_parsed.csv')
+
+
+
+def dateFormat(df):
     """
     As-is: dd-mm-yyyy
     To-be: yyyy-mm-dd (standard MySQL format)
+    
+    :param 1: A dataframe that contains a "Date" column
     """
     
-    pd.set_option('display.min_rows', 20)
-
-    nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15_parsed.csv')
-    nyse = pd.read_csv('Historical/EODDATA/NYSE_Y15_parsed.csv') 
-
     # Problems with strftime interpretation, probably due to size of the DF
     # Reformating date manually.
-    temp = nasdaq['Date'].str.split('-', expand=True)
-    nasdaq['Date'] = temp[2]+'-'+temp[1]+'-'+temp[0]
-
-    temp = nyse['Date'].str.split('-', expand=True)
-    nyse['Date'] = temp[2]+'-'+temp[1]+'-'+temp[0]
+    temp = df['Date'].str.split('-', expand=True)
+    df['Date'] = temp[2]+'-'+temp[1]+'-'+temp[0]
 
     # Useful for transfer to MYSQL schema (no header)
-    nasdaq.to_csv(f'Historical/EODDATA/NASDAQ_Y15_noHeader.csv',header=False, index=False)
-    nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_noHeader.csv',header=False, index=False)
+    return df
 
 
 
-
-
+dateFormat(nasdaq)
 
 
 
