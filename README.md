@@ -11,3 +11,5 @@
 AWS CLI to send data to S3 due to timeout via AWS GUI:</br>
 <code>aws s3 cp marketdata_2017_01_01_DB_no_nan.csv s3://tords</code>
 
+```mysqldump -u root -p marketdata NASDAQ_15 NYSE_15 > table_backup.sql```
+
