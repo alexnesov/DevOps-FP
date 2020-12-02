@@ -16,6 +16,6 @@ Sending the data directly from MySQL Workbench to aws RDS was too slow, so I dec
 
 <code>date && aws s3 cp s3://tords/table_backup.sql - --profile default | mysql -h flaskfinance.ccxri6cskobf.eu-central-1.rds.amazonaws.com -u <user> -p --database=<db name> && date</code>
 
-
+Tried this after "broken pipe" error message:</br>
 <code>aws configure set default.s3.max_concurrent_requests 20</code></br>
 <code>sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1</code>
