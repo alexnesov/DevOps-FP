@@ -5,6 +5,7 @@ import time
 
 years = [2015,2016,2017,2018,2019,2020]
 indices = ["NASDAQ", "NYSE"]
+file = 'NASDAQ_20201105.csv'
 
 
 class batchesToSQL():
@@ -70,10 +71,13 @@ def keymap_replace(
 
 
 
-def dateParsing():
+def dateParsing(df):
     """
-    Getting all distinct dates values to see how to parse them,
-    Because current format is not accepted by MySQL schema check (DATE format)
+    Transform the text formatted dated into numbers
+    example: 2020-Nov-05 --> 2020-11-05
+
+    :param 1: A dataframe that contains a "Date" column
+    :returns : The same dataframe but with the to-be data format
     """
 
     mapping = {
@@ -90,18 +94,9 @@ def dateParsing():
     'Nov': '11',
     'Dec': '12'}
 
-    nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15.csv')
-    nyse = pd.read_csv('Historical/EODDATA/NYSE_Y15.csv') 
+    df['Date'] = df['Date'].map(lambda x: keymap_replace(x,mapping))
 
-    nasdaq['Date'] = nasdaq['Date'].map(lambda x: keymap_replace(x,mapping))
-    nyse['Date'] = nyse['Date'].map(lambda x: keymap_replace(x,mapping))
-
-    nasdaq.to_csv(f'Historical/EODDATA/NASDAQ_Y15_parsed.csv', index=False)
-    nyse.to_csv(f'Historical/EODDATA/NYSE_Y15_parsed.csv', index=False)
-
-
-import pandas as pd
-nasdaq = pd.read_csv('Historical/EODDATA/NASDAQ_Y15_parsed.csv')
+    return df
 
 
 
@@ -111,6 +106,9 @@ def dateFormat(df):
     To-be: yyyy-mm-dd (standard MySQL format)
     
     :param 1: A dataframe that contains a "Date" column
+    :returns : The same dataframe but with the to-be data format
+
+    used in dailyBatchUpload function
     """
     
     # Problems with strftime interpretation, probably due to size of the DF
@@ -122,20 +120,33 @@ def dateFormat(df):
     return df
 
 
-def dailyBatchUpload():
+def listDirs(path):
+    """
+    Returns a list of directories in specified path
+    """
+    dirs  = os.listdir(f'path')
+
+    return dirs 
+
+
+
+
+def dailyBatchUpload(file):
     """
     1. Import new daily csv
-    2. Format Date
-    3. Append to remote RDS DB
+    2. Parse Date 
+    3. Format Date
+    4. Save df without index and header
+    5. Append to remote RDS DB
     """
-    pass
+
+    df = pd.read_csv(f'Historical/NASDAQ/{file}')
+    df = dateParsing(df)
+    df = dateFormat(df)
+
+    return df
 
 
 
 if __name__ == "__main__":
-    for index in indices:
-        start = batchesToSQL(index)
-        start.unifyFiles()
-
-        dateParsing()
-        dateFormat()
+    dailyBatchUpload(file)
