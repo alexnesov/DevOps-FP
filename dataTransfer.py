@@ -2,10 +2,13 @@ import pandas as pd
 import csv
 import os
 import time
+import pymysql
 
 years = [2015,2016,2017,2018,2019,2020]
 indices = ["NASDAQ", "NYSE"]
 file = 'NASDAQ_20201105.csv'
+
+
 
 
 class batchesToSQL():
@@ -128,6 +131,26 @@ def listDirs(path):
 
     return dirs 
 
+
+
+
+
+
+
+def dbConnection(self):
+    db = pymysql.connect(host=f'{self.db_endp}',user=f'{self.db_user}',password=f'{self.db_pass}',database='training')
+    cursor = db.cursor()
+
+    return db, cursor
+
+def appendData():
+
+    qu = "select * from NASDAQ_15"
+    self.cursor.execute(qu)
+    items = cursor.fetchmany(50)
+    self.db.close()
+    
+    return items
 
 
 
