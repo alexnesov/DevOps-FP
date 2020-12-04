@@ -1,6 +1,6 @@
 # Signal-Detection
 
-### Principle to follow: DRY (do not repeat yourself)
+<h4>Principle to follow: DRY (do not repeat yourself)</h4>
 
 "Every piece of knowledge must have a single, unambiguous, authoritative representation within a system"
 
@@ -12,7 +12,7 @@
 <h4> To do:</h4>
 
 <ul>
-<li>Create a DB access object </li>
+<li>Create a DB access object for automatic daily ingestion of EOD</li>
 </ul>
 
 
