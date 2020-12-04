@@ -1,10 +1,18 @@
 # Signal-Detection
 
+### Principle to follow: DRY (do not repeat yourself)
+
+"Every piece of knowledge must have a single, unambiguous, authoritative representation within a system"
+
+<div align="right">
+<i>The Pragmatic Programmer</i>
+</div>
+
 
 <h4> To do:</h4>
 
 <ul>
-<li>Append EODDATA</li>
+<li>Create a DB access object </li>
 </ul>
 
 
