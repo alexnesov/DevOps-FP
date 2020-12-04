@@ -133,16 +133,6 @@ def listDirs(path):
 
 
 
-
-
-
-
-def dbConnection(self):
-    db = pymysql.connect(host=f'{self.db_endp}',user=f'{self.db_user}',password=f'{self.db_pass}',database='training')
-    cursor = db.cursor()
-
-    return db, cursor
-
 def appendData():
 
     qu = "select * from NASDAQ_15"
