@@ -1,19 +1,14 @@
 {
     "jupyter.sendSelectionToInteractiveWindow": true,
     "editor.tokenColorCustomizations": {
-        "comments": "#ff002b",
-        "variables": "#51ffff",
-        "strings": "#e7da63",
-        "textMateRules": [
-            {
-                "scope":"string.quoted.docstring.multi.python",
-                "settings": {
-                    "foreground": "#fd7a00"f" //change to your preference
+            "textMateRules": [
+                {
+                    "scope":"string.quoted.docstring.multi.python",
+                    "settings": {
+                        "foreground": "#7a6b88" //change to your preference
+                    }
                 }
-            }
-        ]
-    },
-    
-    "python.pythonPath": "/bin/python3"
-    
+            ]
+        }
+
 }
