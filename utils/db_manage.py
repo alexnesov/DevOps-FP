@@ -2,7 +2,34 @@ import pandas as pd
 import numpy as np
 import os
 import pymysql
+from enum import Enum, auto
 
+class QuRetType(Enum):
+    """
+    Enumeration of return type for querries
+    
+    Values:
+        
+    - None (nothing returned)
+    
+    - FIRST (first row returned as tuple)
+    
+    - ALL (all data returned as list of tuples)
+    
+    - ALLASPD (all data returned as pandas data frame)
+    
+    - ALLASCSV (all data returned as data frame and export to csv)
+    
+    - ALLASXLS (all data returned as pandas data frame and export excel)
+    
+    """
+    NONE = auto()       #nothing returned
+    FIRST = auto()      #first data set returned as tuple
+    ALL = auto()        #all data returned as list of tuples
+    ALLASPD = auto()    #all data returned as pandas data frame
+    ALLASCSV = auto()   #all data written to some csv file
+    ALLASXLS = auto()   #all data written to some xls file    
+    
 
 
 class DBAccCM:
@@ -45,16 +72,31 @@ class DBManager:
         return conCM
 
 
-    def exc_query(self, db_name, query):
+    def exc_query(self, db_name, query, retres = QuRetType.NONE):
         """
         opens a cursor, executes a query and returns the result depending on type
+
+
+        :Param db_name: name of data base 
+        :Param query: query to be executed
+        :Param retres: return type (see :py:class:`db.db_manage.QuRetType`)
         """
         try:
+            ret = None
             with self.connection(db_name) as conn:
-                c = conn.cursor()
-                c.execute(query)
-                conn.commit()
-                ret = c.fetchall()
+
+                if retres is QuRetType.ALLASPD:
+                    ret = pd.read_sql(query, conn)
+                else:
+                    c = conn.cursor()
+                    c.execute(query)
+                    conn.commit()
+                    if retres is QuRetType.FIRST:
+                        ret = c.fetchone()
+                    elif retres is QuRetType.ALL:
+                        ret = c.fetchall()
+                    else:
+                        pass
         except:
             print("An error occured during the query execution.")
 
