@@ -131,7 +131,6 @@ def dfToRDS(df, table, db_name, location='RDS'):
     db_user = os.environ.get('aws_db_user')
     db_endp = os.environ.get('aws_db_endpoint')
     
-    
     if location=='RDS':
         connection_url = sa.engine.url.URL(drivername="mysql+pymysql",
                                     username=f"{db_user}",
@@ -154,14 +153,12 @@ def dfToRDS(df, table, db_name, location='RDS'):
         with engine.connect() as connection:
             df.to_sql(f'{table}', con=connection, if_exists='append',index=False)
     except Exception as e:
-        print('Error')
         print(f"{traceback.format_exc()}")
+        raise RuntimeError('Connection could not be established.')
     finally:
         engine.dispose()
 
-
-                
-
+            
 
 @functools.lru_cache(maxsize=1)
 def std_db_acc_obj():         
@@ -171,15 +168,16 @@ def std_db_acc_obj():
     db_acc_obj = DBManager()     
     return db_acc_obj      
 
-
+"""
 # TESTING
 quer = "show tables;"
 db_acc_obj = std_db_acc_obj()
 df = db_acc_obj.exc_query('flaskfinance', query=quer, retres=QuRetType.ALL)
+"""
 
-
-""" Important: 
+"""
+Important: 
 sudo apt-get install python3-dev default-libmysqlclient-dev build-essential
 pip install mysqlclient
- """
+"""
 

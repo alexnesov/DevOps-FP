@@ -173,7 +173,4 @@ if __name__ == "__main__":
     arr = os.listdir(f'Historical/NASDAQ') # change
     arr.sort()
 
-    for day in arr[2:]:
-        dailyBatchUpload(day)
-
     
