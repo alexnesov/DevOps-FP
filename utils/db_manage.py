@@ -109,8 +109,7 @@ class DBManager:
                         ret = c.fetchall()
                     else:
                         pass
-            if retres is QuRetType.ALL:
-                ret.to_csv(outpfile, na_rep='', index = index)
+
         except Exception as e:
             print("An error occured during the query execution.")
             print(f"{traceback.format_exc()}")
@@ -119,7 +118,12 @@ class DBManager:
 
 def dfToRDS(df, table, db_name):
     """
-    
+    For an unknown reason, didn't succeed to send df to RDS with connection method above.
+    So had to use sqlalchemy's create_engine function
+
+    :param df: a dataframe to send to RDS
+    :param table: the table in which we want to insert the data
+    :param db_name: the initial db to which we want to connect (containing the target table)
     """
 
     db_pass = os.environ.get('aws_db_pass')
@@ -160,6 +164,7 @@ def std_db_acc_obj():
 quer = "show tables;"
 db_acc_obj = std_db_acc_obj()
 df = db_acc_obj.exc_query('flaskfinance', query=quer, retres=QuRetType.ALL)
+
 
 """ Important: 
 sudo apt-get install python3-dev default-libmysqlclient-dev build-essential
