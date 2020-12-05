@@ -6,6 +6,7 @@ from enum import Enum, auto
 from sqlalchemy import create_engine
 import sqlalchemy as sa
 import functools
+import traceback
 
 
 class QuRetType(Enum):
@@ -110,9 +111,9 @@ class DBManager:
                         pass
             if retres is QuRetType.ALL:
                 ret.to_csv(outpfile, na_rep='', index = index)
-        except:
+        except Exception as e:
             print("An error occured during the query execution.")
-
+            print(f"{traceback.format_exc()}")
         return ret
 
 
@@ -156,10 +157,10 @@ def std_db_acc_obj():
 
 
 # TESTING
-""" quer = "show tables;"
+quer = "show tables;"
 db_acc_obj = std_db_acc_obj()
-df = db_acc_obj.exc_query('flaskfinance', query=quer, retres=QuRetType.ALLASPD)
- """
+df = db_acc_obj.exc_query('flaskfinance', query=quer, retres=QuRetType.ALL)
+
 """ Important: 
 sudo apt-get install python3-dev default-libmysqlclient-dev build-essential
 pip install mysqlclient
