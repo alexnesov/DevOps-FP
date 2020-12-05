@@ -116,7 +116,7 @@ class DBManager:
         return ret
 
 
-def dfToRDS(df, table, db_name):
+def dfToRDS(df, table, db_name, location='RDS'):
     """
     For an unknown reason, didn't succeed to send df to RDS with connection method above.
     So had to use sqlalchemy's create_engine function
@@ -124,26 +124,38 @@ def dfToRDS(df, table, db_name):
     :param df: a dataframe to send to RDS
     :param table: the table in which we want to insert the data
     :param db_name: the initial db to which we want to connect (containing the target table)
+    :param location: whether we want to send data to remote RDS or on my local machine. Default = RDS
     """
 
     db_pass = os.environ.get('aws_db_pass')
     db_user = os.environ.get('aws_db_user')
     db_endp = os.environ.get('aws_db_endpoint')
-
-    connection_url = sa.engine.url.URL(drivername="mysql+pymysql",
-                                   username=f"{db_user}",
-                                   password=f"{db_pass}",
-                                   host=f"{db_endp}",
-                                   database=f"{db_name}"
-                                   )
+    
+    
+    if location=='RDS':
+        connection_url = sa.engine.url.URL(drivername="mysql+pymysql",
+                                    username=f"{db_user}",
+                                    password=f"{db_pass}",
+                                    host=f"{db_endp}",
+                                    database=f"{db_name}"
+                                    )
+    else if location=='local':         
+        connection_url = sa.engine.url.URL(drivername="mysql+pymysql",
+                                    username=f"root",
+                                    password=f"{db_pass}",
+                                    host=f"localhost",
+                                    database=f"{db_name}",
+                                    port=3306
+                                    )
                                    
     engine = create_engine(connection_url)
 
     try:
         with engine.connect() as connection:
             df.to_sql(f'{table}', con=connection, if_exists='append',index=False)
-    except:
+    except Exception as e:
         print('Error')
+        print(f"{traceback.format_exc()}")
     finally:
         engine.dispose()
 

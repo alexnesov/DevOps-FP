@@ -20,7 +20,7 @@ class FindCommonStocks():
         the distinct values (method "value_counts") among the
         huge dataframe
         """
-        df_yfinance = pd.read_csv('Historical/marketdata_2017_01_01_DB.csv')['ticker']
+        df_yfinance = pd.read_csv('Historical/EODDATA/NYSE_Y15.csv')['ticker']
         yfDistincts = df_yfinance.value_counts().to_frame().reset_index()
         self.yfinancelist = yfDistincts['index'].to_list()
         self.yfinancelist.sort()

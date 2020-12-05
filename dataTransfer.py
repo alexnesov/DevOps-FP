@@ -9,6 +9,8 @@ from utils.db_manage import DBManager, QuRetType, dfToRDS
 years = [2015,2016,2017,2018,2019,2020]
 indices = ["NASDAQ", "NYSE"]
 file = 'NASDAQ_20201105.csv'
+database_name = 'training'
+table = 'NASDAQ_15'
 
 
 
@@ -151,37 +153,27 @@ def dailyBatchUpload(file):
     2. Parse Date 
     3. Format Date
     4. Save df without index and header
-    5. Append to remote RDS DB
+    5. Append to remote RDS or local DB (change param). Default = RDS
     """
 
     df = pd.read_csv(f'Historical/NASDAQ/{file}')
     df = dateParsing(df)
     df = dateFormat(df)
+    dfToRDS(df=df,table='nasdaq',db_name='marketdata',location='RDS')
 
     return df
 
 
-file = 'NASDAQ_20201105.csv'
-df = dailyBatchUpload(file)
-
-
-
-database_name = 'training'
-table = 'NASDAQ_15'
 
 
 
 
-db_acc_obj = db_manage.std_db_acc_obj() 
+if __name__ == "__main__":
+    # Get list if file in specifiec directory, ordered, one day after the other
+    arr = os.listdir(f'Historical/NASDAQ') # change
+    arr.sort()
 
+    for day in arr[2:]:
+        dailyBatchUpload(day)
 
-dfToRDS(df,table,database_name)
-
-
-
-""" table = 'NASDAQ_15'
-with engine.connect() as connection:
-    df.to_sql(f'{table}', con=connection, if_exists='append',index=False)
-    engine.dispose()
-
- """
+    
