@@ -3,6 +3,10 @@ import numpy as np
 import os
 import pymysql
 from enum import Enum, auto
+from sqlalchemy import create_engine
+import sqlalchemy as sa
+import functools
+
 
 class QuRetType(Enum):
     """
@@ -32,6 +36,8 @@ class QuRetType(Enum):
     
 
 
+
+
 class DBAccCM:
     """
     Context manager to deal with db connection
@@ -50,7 +56,6 @@ class DBAccCM:
         """
         try:
             self.conn = pymysql.connect(host=f'{self.db_endp}',user=f'{self.db_user}',password=f'{self.db_pass}',database=f'{self.dbname}')
-            # cursor = db.cursor()
             return self.conn
         except Exception as e:
             raise RuntimeError('Connection could not be established.')
@@ -72,7 +77,7 @@ class DBManager:
         return conCM
 
 
-    def exc_query(self, db_name, query, retres = QuRetType.NONE):
+    def exc_query(self, db_name, query, retres = QuRetType.NONE, outpfile = None):
         """
         opens a cursor, executes a query and returns the result depending on type
 
@@ -80,12 +85,18 @@ class DBManager:
         :Param db_name: name of data base 
         :Param query: query to be executed
         :Param retres: return type (see :py:class:`db.db_manage.QuRetType`)
+
+        :Param outpfile: full path to output file if retres is 
+                    QuRetType.ALLASCSV or QuRetType.ALLASXLS
+    
+        :returns: data in format as specified by retres
         """
         try:
             ret = None
             with self.connection(db_name) as conn:
 
-                if retres is QuRetType.ALLASPD:
+                if retres is QuRetType.ALLASPD or \
+                    retres is QuRetType.ALLASCSV:
                     ret = pd.read_sql(query, conn)
                 else:
                     c = conn.cursor()
@@ -97,13 +108,60 @@ class DBManager:
                         ret = c.fetchall()
                     else:
                         pass
+            if retres is QuRetType.ALL:
+                ret.to_csv(outpfile, na_rep='', index = index)
         except:
             print("An error occured during the query execution.")
 
         return ret
 
-databaseName = "marketdata"
-query = "show tables;"
 
-db_acc_obj = DBManager()
-db_acc_obj.exc_query(db_name = test, query=query)
+def dfToRDS(df, table, db_name):
+    """
+    
+    """
+
+    db_pass = os.environ.get('aws_db_pass')
+    db_user = os.environ.get('aws_db_user')
+    db_endp = os.environ.get('aws_db_endpoint')
+
+    connection_url = sa.engine.url.URL(drivername="mysql+pymysql",
+                                   username=f"{db_user}",
+                                   password=f"{db_pass}",
+                                   host=f"{db_endp}",
+                                   database=f"{db_name}"
+                                   )
+                                   
+    engine = create_engine(connection_url)
+
+    try:
+        with engine.connect() as connection:
+            df.to_sql(f'{table}', con=connection, if_exists='append',index=False)
+    except:
+        print('Error')
+    finally:
+        engine.dispose()
+
+
+                
+
+
+@functools.lru_cache(maxsize=1)
+def std_db_acc_obj():         
+    """                                                             
+    Creates the standard data base access object (see: :py:class:`DBManager`)
+    """
+    db_acc_obj = DBManager()     
+    return db_acc_obj      
+
+
+# TESTING
+""" quer = "show tables;"
+db_acc_obj = std_db_acc_obj()
+df = db_acc_obj.exc_query('flaskfinance', query=quer, retres=QuRetType.ALLASPD)
+ """
+""" Important: 
+sudo apt-get install python3-dev default-libmysqlclient-dev build-essential
+pip install mysqlclient
+ """
+

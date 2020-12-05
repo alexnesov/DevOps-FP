@@ -4,10 +4,11 @@ import os
 import time
 import pymysql
 
+from utils.db_manage import DBManager, QuRetType, dfToRDS
+
 years = [2015,2016,2017,2018,2019,2020]
 indices = ["NASDAQ", "NYSE"]
 file = 'NASDAQ_20201105.csv'
-
 
 
 
@@ -160,6 +161,27 @@ def dailyBatchUpload(file):
     return df
 
 
+file = 'NASDAQ_20201105.csv'
+df = dailyBatchUpload(file)
 
-if __name__ == "__main__":
-    dailyBatchUpload(file)
+
+
+database_name = 'training'
+table = 'NASDAQ_15'
+
+
+
+
+db_acc_obj = db_manage.std_db_acc_obj() 
+
+
+dfToRDS(df,table,database_name)
+
+
+
+""" table = 'NASDAQ_15'
+with engine.connect() as connection:
+    df.to_sql(f'{table}', con=connection, if_exists='append',index=False)
+    engine.dispose()
+
+ """
