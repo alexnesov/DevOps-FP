@@ -13,6 +13,7 @@
 
 <ul>
 <li>Create a DB access object for automatic daily ingestion of EOD</li>
+<li>Implement visualisation capaibilities</li>
 </ul>
 
 
