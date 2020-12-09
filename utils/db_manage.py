@@ -138,7 +138,7 @@ def dfToRDS(df, table, db_name, location='RDS'):
                                     host=f"{db_endp}",
                                     database=f"{db_name}"
                                     )
-    else if location=='local':         
+    elif location=='local':         
         connection_url = sa.engine.url.URL(drivername="mysql+pymysql",
                                     username=f"root",
                                     password=f"{db_pass}",

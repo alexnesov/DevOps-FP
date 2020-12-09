@@ -8,6 +8,12 @@ CREATE TABLE NASDAQ_15 (`Symbol` VARCHAR(30), `Date` DATE, \
 `Open` FLOAT, High FLOAT, Low FLOAT, `Close` FLOAT, Volume INT \
 );
 
+
+CREATE TABLE nasdaq (`Symbol` VARCHAR(30), `Date` DATE, \
+`Open` FLOAT, High FLOAT, Low FLOAT, `Close` FLOAT, Volume INT \
+);
+
+
 CREATE TABLE NYSE_15 (`Symbol` VARCHAR(30), `Date` DATE, \
 `Open` FLOAT, High FLOAT, Low FLOAT, `Close` FLOAT, Volume INT \
 );

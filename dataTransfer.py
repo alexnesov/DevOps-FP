@@ -149,6 +149,8 @@ def appendData():
 
 def dailyBatchUpload(file):
     """
+    :param 1: 'Historical/NASDAQ/{file}'
+    
     1. Import new daily csv
     2. Parse Date 
     3. Format Date
@@ -156,10 +158,18 @@ def dailyBatchUpload(file):
     5. Append to remote RDS or local DB (change param). Default = RDS
     """
 
-    df = pd.read_csv(f'Historical/NASDAQ/{file}')
+    if "NASDAQ" in file:
+        df = pd.read_csv(f'Historical/NASDAQ/{file}')
+    else:
+        df = pd.read_csv(f'Historical/NYSE/{file}')
+        
     df = dateParsing(df)
     df = dateFormat(df)
-    dfToRDS(df=df,table='nasdaq',db_name='marketdata',location='RDS')
+
+    if "NASDAQ" in file:
+        dfToRDS(df=df,table='NASDAQ_15',db_name='marketdata',location='RDS')
+    else:
+        dfToRDS(df=df,table='NYSE_15',db_name='marketdata',location='RDS')
 
     return df
 
@@ -171,6 +181,10 @@ def dailyBatchUpload(file):
 if __name__ == "__main__":
     # Get list if file in specifiec directory, ordered, one day after the other
     arr = os.listdir(f'Historical/NASDAQ') # change
-    arr.sort()
+    new_arr = [ x for x in arr if "NASDAQ" in x]
+    new_arr.sort()
+    for date in new_arr:
+        print(date)
+        dailyBatchUpload(date)
 
     
