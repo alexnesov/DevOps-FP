@@ -9,12 +9,10 @@ from utils.db_manage import DBManager, QuRetType, dfToRDS
 
 years = [2015,2016,2017,2018,2019,2020]
 indices = ["NASDAQ", "NYSE"]
-#today = str(datetime.today().strftime('%Y%m%d'))
-today='20201209'
+today = datetime.today() - timedelta(1)
+today = str(today.strftime('%Y%m%d'))
+
 print(today)
-
-
-
 
 
 def keymap_replace(
@@ -133,9 +131,9 @@ def dailyBatchUpload(file):
     """
 
     if "NASDAQ" in file:
-        df = pd.read_csv(f'/downloads/NASDAQ_15/{file}')
+        df = pd.read_csv(f'~/eoddata/downloads/NASDAQ_15/{file}')
     else:
-        df = pd.read_csv(f'/downloads/NYSE_15/{file}')
+        df = pd.read_csv(f'~/eoddata/downloads/NYSE_15/{file}')
         
     df = dateParsing(df)
     df = dateFormat(df)
@@ -164,5 +162,6 @@ if __name__ == "__main__":
             new_arr = [ x for x in arr if f"NYSE_{today}" in x]
         
         new_arr.sort()
-        print(new_arr)
+        print(new_arr[0])
+        dailyBatchUpload(new_arr[0])
     
