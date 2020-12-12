@@ -3,7 +3,7 @@ SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 #DATEVAR=date +%Y_%m_%d
-00 21 * * 1-5 cd ~/financials-downloader-bot && python3 run.py -e "<email>" -p "<pass>" > ~/financials-downloader-bot/crontab.log 2>&1 && mail -s "Financials_$(date +\%Y_\%m_\%d)" alexandrenesovic@gmail.com < crontab.log
+00 21 * * 1-5 cd ~/financials-downloader-bot && python3 run.py -e "<email>" -p "<pass>" > ~/financials-downloader-bot/crontab.log 2>&1 && mail -s "Financials_$(date +\%Y_\%m_\%d)" <email> < crontab.log
 30 9 * * 1 cd ~/financials-downloader-bot && :> geckodriver.log
 
 
