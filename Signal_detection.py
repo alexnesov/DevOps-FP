@@ -18,8 +18,8 @@ now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 
 # PARAMETERS
-list_beg = 1
-list_end = 50
+list_beg = 50
+list_end = 300
 Aroonval = 40
 short_window =10
 long_window = 50
@@ -91,6 +91,8 @@ def SignalDetection(df, tick, *args):
 
     df['symbol'] = tick
 
+    csvAppend(df)
+
     return df
 
 
@@ -111,10 +113,14 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
     DFfinalsignal = DFfinalsignal.loc[mask]
     true_false = list(DFfinalsignal['doubleSignal'].isin(["1"]))
+    print(DFfinalsignal.last)
 
 
     # Append the selected symbols to empty initialized list "validsymbol"
     if True in true_false:
+        lastSignalDate = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
+        lastSignalDate = list(lastSignalDate.loc[-1:]['Date'])[0].strftime("%Y-%m-%d")
+
         validsymbol.append(tick)
         print(f'Ok for {tick}')
     else:
@@ -154,17 +160,27 @@ def append_list_as_row(file_name,validsymbol):
 
 
 
-def main():
-        try:
-            print(f"New https connection for {tick}")
-            df = yf.download(tick, start = "2018-01-01", end = f"{today}", period = "1d")
-            df = SignalDetection(df, tick)
-            lastSignalsDetection(df, tick, start_date, end_date)
-        except KeyError:
-            print(f'Error for {tick}')
-            error.append(tick)
-    
-    
+def main(tick):
+    """
+    try:
+        print(f"New https connection for {tick}")
+        df = yf.download(tick, start = "2018-01-01", end = f"{today}", period = "1d")
+        df = SignalDetection(df, tick)
+        lastSignalsDetection(df, tick, start_date, end_date)
+    except KeyError:
+        print(f'Error for {tick}')
+        error.append(tick)
+    """
+    df = getData(tick)
+    try:
+        print(f"New RDS DB call connection for {tick}")
+        df = getData(tick)
+        df = SignalDetection(df, tick)
+        lastSignalsDetection(df, tick, start_date, end_date)
+    except KeyError:
+        print(f'Error for {tick}')
+
+
 
 
 def getData(tick):
@@ -178,18 +194,10 @@ def getData(tick):
     return df
 
 
-
 if __name__ == "__main__":
-    for tick in FullListToAnalyze:
-        try:
-            print(f"New https connection for {tick}")
-            db_acc_obj = std_db_acc_obj() 
-            df = getData(tick)
-            newdf = SignalDetection(df, tick)
-            lastSignalsDetection(df, tick, start_date, end_date)
-        except KeyError:
-            print(f'Error for {tick}')
-
+    db_acc_obj = std_db_acc_obj() 
+    for tick in ['ADMA']:
+        main(tick)
 
 
 
