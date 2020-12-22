@@ -2,7 +2,6 @@ import pandas as pd
 import yfinance as yf
 from talib import MA_Type
 import talib
-import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta 
 from time import gmtime, strftime
@@ -10,7 +9,7 @@ from csv import writer
 import os
 
 
-from utils.db_manage import QuRetType, std_db_acc_obj
+from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
 
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
@@ -18,8 +17,8 @@ now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 
 # PARAMETERS
-list_beg = 50
-list_end = 300
+list_beg = 1
+list_end = 50
 Aroonval = 40
 short_window =10
 long_window = 50
@@ -36,10 +35,19 @@ FullListToAnalyze = pd.read_csv(f"{currentDirectory}/NASDAQ.csv")['Symbol'].iloc
 file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
 
 
-validsymbol = []
 notvalid = []
 error = []
 init = True
+
+
+# Initilazing dictionnary
+keys = ['ValidTick','SignalDate','ScanDate']
+validSymbols = {}
+for k in keys:
+    validSymbols[k] = []
+
+
+
 
 
 def SignalDetection(df, tick, *args):
@@ -113,7 +121,6 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
     DFfinalsignal = DFfinalsignal.loc[mask]
     true_false = list(DFfinalsignal['doubleSignal'].isin(["1"]))
-    print(DFfinalsignal.last)
 
 
     # Append the selected symbols to empty initialized list "validsymbol"
@@ -121,7 +128,13 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
         lastSignalDate = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
         lastSignalDate = list(lastSignalDate.loc[-1:]['Date'])[0].strftime("%Y-%m-%d")
 
-        validsymbol.append(tick)
+
+        validSymbols['ValidTick'].append(tick) 
+        validSymbols['SignalDate'].append(lastSignalDate)
+        validSymbols['ScanDate'].append(today)
+
+
+
         print(f'Ok for {tick}')
     else:
         print(f'No signal for this time frame for {tick}')
@@ -196,8 +209,11 @@ def getData(tick):
 
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
-    for tick in ['ADMA']:
+    for tick in FullListToAnalyze:
         main(tick)
+
+    df = pd.DataFrame.from_dict(validSymbols)
+    dfToRDS(df=df,table='Signals',db_name='marketdata')
 
 
 
@@ -213,3 +229,5 @@ fig = px.line(df, x='Date', y='AAPL.High', title='Time Series with Rangeslider')
 fig.update_xaxes(rangeslider_visible=True)
 fig.show()
 """
+
+

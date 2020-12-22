@@ -180,8 +180,8 @@ def dailyBatchUpload(file):
 
 if __name__ == "__main__":
     # Get list if file in specifiec directory, ordered, one day after the other
-    arr = os.listdir(f'Historical/NASDAQ') # change
-    new_arr = [ x for x in arr if "NASDAQ" in x]
+    arr = os.listdir(f'Historical/NYSE') # change
+    new_arr = [ x for x in arr if "NYSE" in x]
     new_arr.sort()
     for date in new_arr:
         print(date)

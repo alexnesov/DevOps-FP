@@ -12,7 +12,7 @@ today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 # BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick = 'ABM'
+tick='ADMA'
 
 #Parameters
 Aroonval = 40
@@ -23,7 +23,7 @@ long_window = 50
 def extractFromCSV(tick):
     """
     """
-    imported = pd.read_csv('./Historical_2018_01_01/marketdata.csv')
+    imported = pd.read_csv('marketdata.csv')
     extract = imported.loc[imported['symbol']==f'{tick}']
     extract['Date'] = pd.to_datetime(extract['Date'])
 
