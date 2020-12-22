@@ -9,6 +9,10 @@ from time import gmtime, strftime
 from csv import writer
 import os
 
+
+from utils.db_manage import QuRetType, std_db_acc_obj
+
+
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
@@ -26,7 +30,7 @@ end_date = f'{today}'
 
 # FullListToAnalyze = pd.read_csv(f"{os.path.dirname(os.path.realpath(__file__))}/Overview.csv")['Ticker'].iloc[list_beg:list_end] # Windows
 currentDirectory = os.getcwd() # Ubuntu
-FullListToAnalyze = pd.read_csv(f"{currentDirectory}/Financial.csv")['Ticker'].iloc[list_beg:list_end]
+FullListToAnalyze = pd.read_csv(f"{currentDirectory}/NASDAQ.csv")['Symbol'].iloc[list_beg:list_end]
 
 # file that is going to contain valid symbols
 file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
@@ -86,9 +90,9 @@ def SignalDetection(df, tick, *args):
         1,0)
 
     df['symbol'] = tick
-    csvAppend(df)                                           # FUNC
 
     return df
+
 
 
 
@@ -102,6 +106,7 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     (list = validsymbol)
     """
     DFfinalsignal = signals_df[['Date','doubleSignal']]
+    DFfinalsignal['Date'] = pd.to_datetime(DFfinalsignal['Date'], format='%Y-%m-%d')
     DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
     mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
     DFfinalsignal = DFfinalsignal.loc[mask]
@@ -127,10 +132,11 @@ def csvAppend(df):
     global init
 
     if init == True:
-        df.to_csv('Historical_2018_01_01/marketdata.csv', index=False)
+        df.to_csv('marketdata.csv', index=False)
         init = False
     else:
-        df.to_csv('Historical_2018_01_01/marketdata.csv', mode='a', index=False, header=False)
+        df.to_csv('marketdata.csv', mode='a', index=False, header=False)
+
 
 
 
@@ -147,8 +153,8 @@ def append_list_as_row(file_name,validsymbol):
 
 
 
+
 def main():
-    for tick in FullListToAnalyze:
         try:
             print(f"New https connection for {tick}")
             df = yf.download(tick, start = "2018-01-01", end = f"{today}", period = "1d")
@@ -158,8 +164,44 @@ def main():
             print(f'Error for {tick}')
             error.append(tick)
     
-    append_list_as_row(file_name,validsymbol)
     
 
+
+def getData(tick):
+    """
+    Pulling from remote RDS
+    """
+    qu=f"SELECT * FROM NASDAQ_18 WHERE Symbol='{tick}' and Date>'2018-01-01' "
+    df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
+        retres=QuRetType.ALLASPD)
+
+    return df
+
+
+
 if __name__ == "__main__":
-    main()
+    for tick in FullListToAnalyze:
+        try:
+            print(f"New https connection for {tick}")
+            db_acc_obj = std_db_acc_obj() 
+            df = getData(tick)
+            newdf = SignalDetection(df, tick)
+            lastSignalsDetection(df, tick, start_date, end_date)
+        except KeyError:
+            print(f'Error for {tick}')
+
+
+
+
+
+"""
+# Plotly example
+# https://plotly.com/python/time-series/
+import plotly.express as px
+import pandas as pd
+
+df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
+fig = px.line(df, x='Date', y='AAPL.High', title='Time Series with Rangeslider')
+fig.update_xaxes(rangeslider_visible=True)
+fig.show()
+"""
