@@ -8,6 +8,10 @@ import sqlalchemy as sa
 import functools
 import traceback
 
+import sqlite3
+from sqlite3 import Error
+
+dbname = 'NASDAQ_2020_11_01.db'
 
 class QuRetType(Enum):
     """
@@ -160,6 +164,7 @@ def dfToRDS(df, table, db_name, location='RDS'):
 
             
 
+
 @functools.lru_cache(maxsize=1)
 def std_db_acc_obj():         
     """                                                             
@@ -168,12 +173,50 @@ def std_db_acc_obj():
     db_acc_obj = DBManager()     
     return db_acc_obj      
 
-"""
-# TESTING
-quer = "show tables;"
-db_acc_obj = std_db_acc_obj()
-df = db_acc_obj.exc_query('flaskfinance', query=quer, retres=QuRetType.ALL)
-"""
+
+
+
+
+
+
+# TESTING RDS
+def test():
+    quer = "select * from NASDAQ_15 where date>'2020-11-01';"
+    db_acc_obj = std_db_acc_obj()
+    df = db_acc_obj.exc_query('marketdata', query=quer, retres=QuRetType.ALLASPD)
+
+
+
+
+# NASDAQ_2020_11_01
+def rand():
+    conn = sqlite3.connect('marketdataSQL.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE NASDAQ_2020_11_01 (
+        Symbol varchar(10), 
+        `Date` Date, 
+        Open float, 
+        High float, 
+        Low float, 
+        Close float,
+        Volume int)''')
+    conn.commit()
+    conn.close()
+
+
+def dfToSql():
+    # Df to sqlite3 local DB
+    df.to_sql('NASDAQ_2020_11_01', conn, if_exists='append',index=False)
+
+
+def display():
+    c.execute('''SELECT * FROM NASDAQ_2020_11_01 limit 10''')
+    rows = c.fetchone()
+
+
+
+
+
 
 """
 Important: 

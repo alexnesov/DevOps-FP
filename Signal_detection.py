@@ -99,7 +99,7 @@ def SignalDetection(df, tick, *args):
 
     df['symbol'] = tick
 
-    csvAppend(df)
+    # csvAppend(df)
 
     return df
 

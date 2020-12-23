@@ -24,6 +24,9 @@ currentGlobalTick = listOfTicks[0]
 
 
 class getData():
+    """
+    Pulling data from yfinance, in batches, to avoid IP blocking
+    """
 
     def __init__(self,batch_size, wait_secs, init_csv=True):
 
