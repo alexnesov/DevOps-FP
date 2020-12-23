@@ -8,9 +8,9 @@ from utils.db_manage import DBManager, QuRetType, dfToRDS
 
 years = [2015,2016,2017,2018,2019,2020]
 indices = ["NASDAQ", "NYSE"]
-file = 'NASDAQ_20201105.csv'
-database_name = 'training'
-table = 'NASDAQ_15'
+#file = 'NASDAQ_20201106.csv'
+#database_name = 'training'
+#table = 'NASDAQ_15'
 
 
 
@@ -147,7 +147,7 @@ def appendData():
 
 
 
-def dailyBatchUpload(file):
+def dailyBatchUpload(file, exchange):
     """
     :param 1: 'Historical/NASDAQ/{file}'
     
@@ -159,9 +159,9 @@ def dailyBatchUpload(file):
     """
 
     if "NASDAQ" in file:
-        df = pd.read_csv(f'Historical/NASDAQ/{file}')
+        df = pd.read_csv(f'Historical/{exchange}/Already Uploaded/{file}')
     else:
-        df = pd.read_csv(f'Historical/NYSE/{file}')
+        df = pd.read_csv(f'Historical/{exchange}/Already Uploaded/{file}')
         
     df = dateParsing(df)
     df = dateFormat(df)
@@ -180,11 +180,12 @@ def dailyBatchUpload(file):
 
 if __name__ == "__main__":
     # Get list if file in specifiec directory, ordered, one day after the other
-    arr = os.listdir(f'Historical/NYSE') # change
-    new_arr = [ x for x in arr if "NYSE" in x]
+    exchange = 'NYSE'
+    arr = os.listdir(f'Historical/{exchange}/Already Uploaded') # change
+    new_arr = [ x for x in arr if f"{exchange}" in x]
     new_arr.sort()
     for date in new_arr:
         print(date)
-        dailyBatchUpload(date)
+        dailyBatchUpload(file=date,exchange=exchange)
 
     
