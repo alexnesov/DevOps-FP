@@ -22,7 +22,7 @@ short_window =10
 long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-start_date = datetime.today() - timedelta(days=20)
+start_date = datetime.today() - timedelta(days=15)
 end_date = f'{today}'
 
 # FullListToAnalyze = pd.read_csv(f"{os.path.dirname(os.path.realpath(__file__))}/Overview.csv")['Ticker'].iloc[list_beg:list_end] # Windows
@@ -188,9 +188,15 @@ def sqliteToDF(dbanme='marketdataSQL.db', table):
     return df
 
 
-def main():
-    df = sqliteToDF()
-        for tick in 
+def listTables():
+    conn = sqlite3.connect('utils/marketdataSQL.db')
+    c = conn.cursor()
+    c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    print(c.fetchall())
+    conn.close()
+
+
+
 
 if __name__ == "__main__":
     main()

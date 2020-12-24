@@ -178,28 +178,24 @@ def std_db_acc_obj():
 
 
 
-# NASDAQ_2020_11_01 limit 10
-# NYSE_2020_11_01 limit 10
 
 
-
-
-def testRDS():
-    quer = "select * from NYSE_15 where date>'2020-11-01';"
+def getDataFromRDS():
+    quer = "select * from NYSE_15 where date>'2020-10-01';"
     db_acc_obj = std_db_acc_obj()
     df = db_acc_obj.exc_query('marketdata', query=quer, retres=QuRetType.ALLASPD)
 
 
 
 
-# NASDAQ_2020_11_01
+dbname='utils/marketdataSQL.db'
 def createTable(dbname='marketdataSQL.db'):
     """
     create Tabme in sqlite3 DB
     """
     conn = sqlite3.connect(dbname)
     c = conn.cursor()
-    c.execute('''CREATE TABLE NYSE_2020_11_01 (
+    c.execute('''CREATE TABLE NASDAQ_2020_10_01 (
         Symbol varchar(10), 
         `Date` Date, 
         Open float, 
@@ -216,16 +212,17 @@ def dfToSql():
     """
     Df to sqlite3 local DB
     """
-    conn = sqlite3.connect('marketdataSQL.db')
+    conn = sqlite3.connect('utils/marketdataSQL.db')
     c = conn.cursor()
-    df.to_sql('NYSE_2020_11_01', conn, if_exists='append',index=False)
+    df.to_sql('NASDAQ_2020_10_01', conn, if_exists='append',index=False)
     
     conn.commit()
     conn.close()
 
 
 def listTables():
-    conn = sqlite3.connect('marketdataSQL.db')
+    conn = sqlite3.connect('utils/marketdataSQL.db')
+    c = conn.cursor()
     c.execute("SELECT name FROM sqlite_master WHERE type='table';")
     print(c.fetchall())
 
@@ -235,11 +232,8 @@ def listTables():
 def display():
     """
     """
-    c.execute('''SELECT * FROM NASDAQ_2020_11_01 limit 10''')
+    c.execute('''SELECT * FROM NASDAQ_2020_10_01 limit 10''')
     rows = c.fetchone()
-
-
-
 
 
 

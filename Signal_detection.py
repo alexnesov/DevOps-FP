@@ -200,7 +200,7 @@ def getData(tick):
     """
     Pulling from remote RDS
     """
-    qu=f"SELECT * FROM NASDAQ_18 WHERE Symbol='{tick}' and Date>'2018-01-01' "
+    qu=f"SELECT * FROM NASDAQ_15 WHERE Symbol='{tick}' and Date>'2020-10-01' "
     df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
         retres=QuRetType.ALLASPD)
 
@@ -208,13 +208,20 @@ def getData(tick):
 
 
 if __name__ == "__main__":
-    db_acc_obj = std_db_acc_obj() 
-    for tick in FullListToAnalyze:
+    #db_acc_obj = std_db_acc_obj() 
+    #for tick in FullListToAnalyze:
         main(tick)
 
-    df = pd.DataFrame.from_dict(validSymbols)
-    dfToRDS(df=df,table='Signals',db_name='marketdata')
+    #df = pd.DataFrame.from_dict(validSymbols)
+   
+    #dfToRDS(df=df,table='Signals',db_name='marketdata')
 
+tick='ABMD'
+df = getData('ABMD')
+print(df)
+
+df = SignalDetection(df, tick)
+lastSignalsDetection(df, tick, start_date, end_date)
 
 
 
