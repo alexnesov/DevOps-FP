@@ -7,7 +7,9 @@ from datetime import datetime, timedelta
 from time import gmtime, strftime
 from csv import writer
 import os
-import sqlite3
+
+
+from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
 
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
@@ -22,7 +24,7 @@ short_window =10
 long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-start_date = datetime.today() - timedelta(days=15)
+start_date = datetime.today() - timedelta(days=20)
 end_date = f'{today}'
 
 # FullListToAnalyze = pd.read_csv(f"{os.path.dirname(os.path.realpath(__file__))}/Overview.csv")['Ticker'].iloc[list_beg:list_end] # Windows
@@ -125,14 +127,9 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     if True in true_false:
         lastSignalDate = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
         lastSignalDate = list(lastSignalDate.loc[-1:]['Date'])[0].strftime("%Y-%m-%d")
-
-
         validSymbols['ValidTick'].append(tick) 
         validSymbols['SignalDate'].append(lastSignalDate)
         validSymbols['ScanDate'].append(today)
-
-
-
         print(f'Ok for {tick}')
     else:
         print(f'No signal for this time frame for {tick}')
@@ -140,7 +137,8 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
 
     print(f"Number not valid: {len(notvalid)}")
 
-
+    # re-initilization
+    true_false = False
 
 def csvAppend(df):
     """
@@ -171,19 +169,10 @@ def append_list_as_row(file_name,validsymbol):
 
 
 
-
-
-
-
-# conn = sqlite3.connect('utils/marketdataSQL.db')
-# c = conn.cursor()
-# c.execute('''SELECT * FROM NASDAQ_2020_11_01''')
-
-
 # NASDAQ_2020_11_01
-def sqliteToDF(dbanme='marketdataSQL.db', table):
+def sqliteToDF(table,dbanme='marketdataSQL.db'):
     conn = sqlite3.connect(f'utils/{dbanme}')
-    qu = f"SELECT * FROM {table} limit 10"
+    qu = f"SELECT * FROM {table}"
     df = pd.read_sql(qu, conn)
     return df
 
@@ -195,6 +184,21 @@ def listTables():
     print(c.fetchall())
     conn.close()
 
+
+
+def main():
+    dftickers = pd.read_csv('utils/nasdaq_list.csv')
+    tickers = dftickers[dftickers.columns[0]].tolist()
+    initialdf = sqliteToDF(table='NASDAQ_2020_10_01')
+    for tick in ['ACRS','ABMD']:
+        dfTick = initialdf.loc[initialdf['Symbol']==f'{tick}']
+        print(dfTick)
+        print(tick)
+        df = SignalDetection(dfTick,tick)
+        lastSignalsDetection(df, tick, start_date, end_date)
+
+    tocsvDF = pd.DataFrame.from_dict(validSymbols)
+    tocsvDF.to_csv('utils/test.csv')
 
 
 
