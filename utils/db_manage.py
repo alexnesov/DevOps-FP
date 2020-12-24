@@ -178,10 +178,14 @@ def std_db_acc_obj():
 
 
 
+# NASDAQ_2020_11_01 limit 10
+# NYSE_2020_11_01 limit 10
 
-# TESTING RDS
-def test():
-    quer = "select * from NASDAQ_15 where date>'2020-11-01';"
+
+
+
+def testRDS():
+    quer = "select * from NYSE_15 where date>'2020-11-01';"
     db_acc_obj = std_db_acc_obj()
     df = db_acc_obj.exc_query('marketdata', query=quer, retres=QuRetType.ALLASPD)
 
@@ -189,10 +193,13 @@ def test():
 
 
 # NASDAQ_2020_11_01
-def rand():
-    conn = sqlite3.connect('marketdataSQL.db')
+def createTable(dbname='marketdataSQL.db'):
+    """
+    create Tabme in sqlite3 DB
+    """
+    conn = sqlite3.connect(dbname)
     c = conn.cursor()
-    c.execute('''CREATE TABLE NASDAQ_2020_11_01 (
+    c.execute('''CREATE TABLE NYSE_2020_11_01 (
         Symbol varchar(10), 
         `Date` Date, 
         Open float, 
@@ -200,16 +207,34 @@ def rand():
         Low float, 
         Close float,
         Volume int)''')
+    
     conn.commit()
     conn.close()
 
 
 def dfToSql():
-    # Df to sqlite3 local DB
-    df.to_sql('NASDAQ_2020_11_01', conn, if_exists='append',index=False)
+    """
+    Df to sqlite3 local DB
+    """
+    conn = sqlite3.connect('marketdataSQL.db')
+    c = conn.cursor()
+    df.to_sql('NYSE_2020_11_01', conn, if_exists='append',index=False)
+    
+    conn.commit()
+    conn.close()
+
+
+def listTables():
+    conn = sqlite3.connect('marketdataSQL.db')
+    c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    print(c.fetchall())
+
+    conn.close()
 
 
 def display():
+    """
+    """
     c.execute('''SELECT * FROM NASDAQ_2020_11_01 limit 10''')
     rows = c.fetchone()
 
