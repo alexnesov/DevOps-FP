@@ -24,13 +24,11 @@ short_window =10
 long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-NScanDaysInterval = 2
+NScanDaysInterval = 10
 start_date = datetime.today() - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
 
-# FullListToAnalyze = pd.read_csv(f"{os.path.dirname(os.path.realpath(__file__))}/Overview.csv")['Ticker'].iloc[list_beg:list_end] # Windows
 currentDirectory = os.getcwd() # Ubuntu
-#FullListToAnalyze = pd.read_csv(f"{currentDirectory}/NASDAQ.csv")['Symbol'].iloc[list_beg:list_end]
 
 # file that is going to contain valid symbols
 file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
@@ -42,7 +40,7 @@ init = True
 
 
 # Initilazing dictionnary
-keys = ['ValidTick','SignalDate','ScanDate','NScanDaysInterval']
+keys = ['ValidTick','SignalDate','ScanDate','NScanDaysInterval','PriceAtSignal']
 validSymbols = {}
 for k in keys:
     validSymbols[k] = []
@@ -116,22 +114,29 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     Func doesn't return anything, it appends selected stock for given time interval in empty list
     (list = validsymbol)
     """
-    DFfinalsignal = signals_df[['Date','doubleSignal']]
+    print(signals_df)
+    DFfinalsignal = signals_df[['Date','Close','doubleSignal']]
     DFfinalsignal['Date'] = pd.to_datetime(DFfinalsignal['Date'], format='%Y-%m-%d')
-    DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
     mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
     DFfinalsignal = DFfinalsignal.loc[mask]
     true_false = list(DFfinalsignal['doubleSignal'].isin(["1"]))
 
-
+    # 9 17 18 19 20 21 27 28
     # Append the selected symbols to empty initialized list "validsymbol"
     if True in true_false:
-        lastSignalDate = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
-        lastSignalDate = list(lastSignalDate.loc[-1:]['Date'])[0].strftime("%Y-%m-%d")
+        lastSignalDF = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
+
+        lastSignalDate = lastSignalDF.loc[-1:,'Date']
+        lastSignalPrice = list(lastSignalDF.loc[-1:,'Close'])[0]
+
+        string_lastSignalDate = list(lastSignalDF.loc[-1:,'Date'])[0].strftime("%Y-%m-%d") 
+        
         validSymbols['ValidTick'].append(tick) 
-        validSymbols['SignalDate'].append(lastSignalDate)
+        validSymbols['SignalDate'].append(string_lastSignalDate)
         validSymbols['ScanDate'].append(today)
         validSymbols['NScanDaysInterval'].append(NScanDaysInterval)
+        validSymbols['PriceAtSignal'].append(lastSignalPrice)
+        
         print(f'Ok for {tick}')
     else:
         print(f'No signal for this time frame for {tick}')
@@ -189,10 +194,15 @@ def listTables():
 
 def main():
     stockexchanges = ['NASDAQ','NYSE']
+    
     for SE in stockexchanges:
         dftickers = pd.read_csv(f'utils/{SE}_list.csv')
         tickers = dftickers[dftickers.columns[0]].tolist()
-        initialDF = sqliteToDF(table=f'{SE}_2020_10_01')
+        # initialDF = sqliteToDF(table=f'{SE}_2020_10_01')
+        qu = f"SELECT * FROM {SE}_15 WHERE DATE > '2020-10-01'"
+        initialDF = db_acc_obj.exc_query(db_name='marketdata', query=qu, \
+        retres=QuRetType.ALLASPD)
+
         for tick in tickers:
             try:
                 dfTick = initialDF.loc[initialDF['Symbol']==f'{tick}']
@@ -203,12 +213,15 @@ def main():
                 print(f"error for {tick}")
 
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
-        tocsvDF.to_csv('utils/test.csv')
+        tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
-        dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='marketdata')
+        #dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='marketdata')
+
+
 
 
 
 if __name__ == "__main__":
+    db_acc_obj = std_db_acc_obj() 
     main()
     
