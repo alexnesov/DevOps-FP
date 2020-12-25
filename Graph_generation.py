@@ -12,7 +12,7 @@ today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 # BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick='ADMA'
+tick='ABMD'
 
 #Parameters
 Aroonval = 40

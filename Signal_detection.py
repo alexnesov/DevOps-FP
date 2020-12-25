@@ -24,7 +24,7 @@ short_window =10
 long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-start_date = datetime.today() - timedelta(days=20)
+start_date = datetime.today() - timedelta(days=10)
 end_date = f'{today}'
 
 # FullListToAnalyze = pd.read_csv(f"{os.path.dirname(os.path.realpath(__file__))}/Overview.csv")['Ticker'].iloc[list_beg:list_end] # Windows
@@ -99,7 +99,7 @@ def SignalDetection(df, tick, *args):
 
     df['symbol'] = tick
 
-    # csvAppend(df)
+    csvAppend(df)
 
     return df
 
@@ -208,20 +208,15 @@ def getData(tick):
 
 
 if __name__ == "__main__":
-    #db_acc_obj = std_db_acc_obj() 
-    #for tick in FullListToAnalyze:
-        main(tick)
+    db_acc_obj = std_db_acc_obj() 
+    tick='OCGN'
+    initialDF = getData(tick)
+    df = SignalDetection(df, tick)
+    lastSignalsDetection(df, tick, start_date, end_date)
+
 
     #df = pd.DataFrame.from_dict(validSymbols)
-   
     #dfToRDS(df=df,table='Signals',db_name='marketdata')
-
-tick='ABMD'
-df = getData('ABMD')
-print(df)
-
-df = SignalDetection(df, tick)
-lastSignalsDetection(df, tick, start_date, end_date)
 
 
 

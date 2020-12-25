@@ -11,7 +11,6 @@ import traceback
 import sqlite3
 from sqlite3 import Error
 
-dbname = 'NASDAQ_2020_11_01.db'
 
 class QuRetType(Enum):
     """
@@ -178,16 +177,21 @@ def std_db_acc_obj():
 
 
 
+# NASDAQ_2020_11_01 limit 10
+# NYSE_2020_11_01 limit 10
+
+
 
 
 def getDataFromRDS():
-    quer = "select * from NYSE_15 where date>'2020-10-01';"
+    quer = "select * from NASDAQ_15 where date>'2020-10-01';"
     db_acc_obj = std_db_acc_obj()
     df = db_acc_obj.exc_query('marketdata', query=quer, retres=QuRetType.ALLASPD)
 
 
 
 
+# NASDAQ_2020_11_01
 dbname='utils/marketdataSQL.db'
 def createTable(dbname='marketdataSQL.db'):
     """
@@ -237,9 +241,6 @@ def display():
 
 
 
-"""
-Important: 
-sudo apt-get install python3-dev default-libmysqlclient-dev build-essential
-pip install mysqlclient
-"""
+
+
 
