@@ -24,7 +24,7 @@ short_window =10
 long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-NScanDaysInterval = 10
+NScanDaysInterval = 1
 start_date = datetime.today() - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
 
@@ -215,7 +215,7 @@ def main():
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
-        #dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='marketdata')
+        dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='marketdata')
 
 
 
