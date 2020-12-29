@@ -31,4 +31,7 @@ def signalsPricesEvol():
 if __name__ == '__main__':
     db_acc_obj = std_db_acc_obj() 
     items = signalsPricesEvol()
+    quDeletePreviousDates = f"DELETE FROM signals.Signals_aroon_crossing"
+    db_acc_obj.exc_query(db_name='signals', query=quDeletePreviousDates)
     dfToRDS(df=items, table='Signals_aroon_crossing', db_name='signals', location='RDS')
+
