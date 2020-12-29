@@ -13,6 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 
+
 import os
 import time
 import argparse
@@ -113,3 +114,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
