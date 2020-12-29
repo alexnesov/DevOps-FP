@@ -5,7 +5,7 @@ import time
 import pymysql
 from datetime import datetime, timedelta 
 
-from utils.db_manage import DBManager, QuRetType, dfToRDS
+from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
 
 years = [2015,2016,2017,2018,2019,2020]
 indices = ["NASDAQ", "NYSE"]
@@ -140,18 +140,26 @@ def dailyBatchUpload(file):
 
     if "NASDAQ" in file:
         dfToRDS(df=df,table='NASDAQ_15',db_name='marketdata',location='RDS')
+        dfToRDS(df=df,table='US_TODAY',db_name='marketdata',location='RDS')
     else:
         dfToRDS(df=df,table='NYSE_15',db_name='marketdata',location='RDS')
-
+        dfToRDS(df=df,table='US_TODAY',db_name='marketdata',location='RDS')
     return df
 
 
-
-
-
-
 if __name__ == "__main__":
-    # Get list if file in specifiec directory, ordered, one day after the other
+    # 1. this dataTransfer.py transfers the data to RDS NASDAQ_15, NYSE_15 and US_TODAY
+    # 2. Delete previous date in US_TODAY
+
+    db_acc_obj = std_db_acc_obj() 
+    
+    # Get last Date
+    quToday = "SELECT * FROM US_TODAY ORDER BY Date DESC LIMIT 1;"
+    df = db_acc_obj.exc_query(db_name='marketdata', query=quToday, \
+        retres=QuRetType.ALLASPD)
+    lastDate = df['Date'].tolist()[0].strftime("%Y-%m-%d")
+
+    # 1. this dataTransfer.py transfers the data to RDS NASDAQ_15, NYSE_15 and US_TODAY
     stock_exchange = ['NASDAQ_15','NYSE_15']
     for ex in stock_exchange:
         arr = os.listdir(f'downloads/{ex}') 
@@ -164,4 +172,7 @@ if __name__ == "__main__":
         new_arr.sort()
         print(new_arr[0])
         dailyBatchUpload(new_arr[0])
-    
+
+    # 2. Delete rows where Date <'last Date'
+    quDeletePreviousDates = f"DELETE FROM US_TODAY WHERE Date<'{lastDate}'"
+    db_acc_obj.exc_query(db_name='marketdata', query=quDeletePreviousDates)
