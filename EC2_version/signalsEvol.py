@@ -19,10 +19,13 @@ def signalsPricesEvol():
     """
     squDelPrevDaysInUSTODAY = f"DELETE FROM marketdata.US_TODAY WHERE Date <'{yesterday}'"
 
-    squDelPreviousTable = "DROP TABLE signals.Signals_aroon_crossing"
+    try:
+        squDelPreviousTable = "DROP TABLE signals.Signals_aroon_crossing"
+    except OperationalError:
+        pass
 
     quCreate = "CREATE TABLE signals.Signals_aroon_crossing AS\
-        Select ValidTick, SignalDate, ScanDate, NScanDaysInterval, PriceAtSignal, `Close` FROM\
+        SELECT DISTINCT ValidTick, SignalDate, ScanDate, NScanDaysInterval, PriceAtSignal, `Close` FROM\
         (\
             SELECT * FROM marketdata.Signals_aroon_crossing\
             INNER JOIN\
@@ -37,9 +40,9 @@ def signalsPricesEvol():
 
     quPull = "SELECT * FROM signals.Signals_aroon_crossing"
 
-    items = db_acc_obj.exc_query(db_name='marketdata', query=squDelPrevDaysInUSTODAY)
-    items = db_acc_obj.exc_query(db_name='marketdata', query=squDelPreviousTable)
-    items = db_acc_obj.exc_query(db_name='marketdata', query=quCreate)
+    db_acc_obj.exc_query(db_name='marketdata', query=squDelPrevDaysInUSTODAY)
+    db_acc_obj.exc_query(db_name='marketdata', query=squDelPreviousTable)
+    db_acc_obj.exc_query(db_name='marketdata', query=quCreate)
     items = db_acc_obj.exc_query(db_name='marketdata', query=quPull, \
         retres=QuRetType.ALLASPD)
     

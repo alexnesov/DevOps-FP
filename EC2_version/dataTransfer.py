@@ -157,7 +157,6 @@ if __name__ == "__main__":
     quToday = "SELECT * FROM US_TODAY ORDER BY Date DESC LIMIT 1;"
     df = db_acc_obj.exc_query(db_name='marketdata', query=quToday, \
         retres=QuRetType.ALLASPD)
-    lastDate = df['Date'].tolist()[0].strftime("%Y-%m-%d")
 
     # 1. this dataTransfer.py transfers the data to RDS NASDAQ_15, NYSE_15 and US_TODAY
     stock_exchange = ['NASDAQ_15','NYSE_15']
@@ -172,7 +171,3 @@ if __name__ == "__main__":
         new_arr.sort()
         print(new_arr[0])
         dailyBatchUpload(new_arr[0])
-
-    # 2. Delete rows where Date <'last Date'
-    quDeletePreviousDates = f"DELETE FROM US_TODAY WHERE Date<'{lastDate}'"
-    db_acc_obj.exc_query(db_name='marketdata', query=quDeletePreviousDates)

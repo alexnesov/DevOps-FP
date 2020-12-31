@@ -22,7 +22,6 @@ short_window =10
 long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-# -2 days here will actually provide a signal for the day before
 NScanDaysInterval = 2
 start_date = datetime.today() - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
@@ -191,6 +190,19 @@ def listTables():
 
 
 
+
+quCopy = "CREATE TABLE Signals_aroon_crossing_copy AS (\
+    SELECT DISTINCT ValidTick, SignalDate, ScanDate, NScanDaysInterval, PriceAtSignal \
+    FROM marketdata.Signals_aroon_crossing)"
+
+
+quDeletePreviousTable = "DROP TABLE marketdata.Signals_aroon_crossing"
+
+quRenameTable = "ALTER TABLE marketdata.Signals_aroon_crossing_copy\
+    RENAME AS marketdata.Signals_aroon_crossing"
+
+
+
 def main():
     stockexchanges = ['NASDAQ','NYSE']
     
@@ -214,14 +226,18 @@ def main():
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
-        #dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='marketdata')
-        
+        dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='marketdata')
 
+        db_acc_obj.exc_query(db_name='marketdata', query=quCopy)
+        db_acc_obj.exc_query(db_name='marketdata', query=quDeletePreviousTable)
+        db_acc_obj.exc_query(db_name='marketdata', query=quRenameTable)
+
+        
 
 
 
 
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
-    main()
+    #main()
     
