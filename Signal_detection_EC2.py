@@ -1,4 +1,5 @@
 import pandas as pd
+
 import yfinance as yf
 from talib import MA_Type
 import talib
@@ -193,13 +194,13 @@ def listTables():
 
 quCopy = "CREATE TABLE Signals_aroon_crossing_copy AS (\
     SELECT DISTINCT ValidTick, SignalDate, ScanDate, NScanDaysInterval, PriceAtSignal \
-    FROM marketdata.Signals_aroon_crossing)"
+    FROM signals.Signals_aroon_crossing)"
 
 
-quDeletePreviousTable = "DROP TABLE marketdata.Signals_aroon_crossing"
+quDeletePreviousTable = "DROP TABLE signals.Signals_aroon_crossing"
 
-quRenameTable = "ALTER TABLE marketdata.Signals_aroon_crossing_copy\
-    RENAME AS marketdata.Signals_aroon_crossing"
+quRenameTable = "ALTER TABLE signals.Signals_aroon_crossing_copy\
+    RENAME AS signals.Signals_aroon_crossing"
 
 
 
@@ -226,11 +227,12 @@ def main():
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
-        dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='marketdata')
+        dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='signals')
 
-        db_acc_obj.exc_query(db_name='marketdata', query=quCopy)
-        db_acc_obj.exc_query(db_name='marketdata', query=quDeletePreviousTable)
-        db_acc_obj.exc_query(db_name='marketdata', query=quRenameTable)
+        db_acc_obj.exc_query(db_name='signals', query=quCopy)
+        db_acc_obj.exc_query(db_name='signals', query=quDeletePreviousTable)
+        db_acc_obj.exc_query(db_name='signals', query=quRenameTable)
+        
 
         
 
@@ -239,5 +241,5 @@ def main():
 
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
-    #main()
+    main()
     
