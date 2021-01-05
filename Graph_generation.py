@@ -97,7 +97,7 @@ import plotly.graph_objects as go
 
 
 
-def plottingPlotly():
+def plottingPlotly(df):
     fig = make_subplots(rows=3, cols=1,
                         shared_xaxes=True,
                         vertical_spacing=0.02,
@@ -105,27 +105,38 @@ def plottingPlotly():
                         [None],
                         [{}]])
 
-    fig.add_trace(go.Scatter(x=[0, 1, 2], y=[10, 11, 12],mode='lines'),
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Close'], name='Close', mode='lines'),
                 row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=[5, 0, 2], y=[10, 11, 12], name='Close',mode='lines',\
+    fig.add_trace(go.Scatter(x=df.Date, y=df['long_mavg'], name='long_mvg',mode='lines',
+        line=dict(color='yellow')),
+                row=1, col=1)
+
+    fig.add_trace(go.Scatter(x=df.Date, y=df['short_mavg'], name='short_mvg',mode='lines',
         line=dict(color='firebrick')),
                 row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=[2, 3, 4], y=[100, 110, 120], name='Aroon', mode='lines',\
-        line=dict(color='royalblue')),
+    fig.add_trace(go.Scatter(x=df.Date[df.positions==1], y=df.short_mavg[df.positions==1], 
+    name='signal',mode='markers', marker_symbol='triangle-up', marker_color='green'),
+                row=1, col=1)
+
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon Up'], name='Aroon Up', mode='lines',
+        line=dict(color='green')),
+                row=3, col=1)
+
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon Down'], name='Aroon Down', mode='lines',\
+        line=dict(color='red')),
                 row=3, col=1)
 
     fig.update_traces(line_width=1)
-    fig.update_layout(title='Title',
-    width=1200,
-    height=500)
+    fig.update_layout(
+    title='Trend Reversal Detection',
+    width=1400,
+    height=900)
 
     fig.show()
 
 
-
-plottingPlotly()
 
 
 
