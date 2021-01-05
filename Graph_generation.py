@@ -12,7 +12,7 @@ today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 # BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick='ABMD'
+tick='ACOR'
 
 #Parameters
 Aroonval = 40
@@ -92,9 +92,50 @@ def plotting(df):
 
 
 
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
+
+
+def plottingPlotly():
+    fig = make_subplots(rows=3, cols=1,
+                        shared_xaxes=True,
+                        vertical_spacing=0.02,
+                        specs=[[{"rowspan":2}],
+                        [None],
+                        [{}]])
+
+    fig.add_trace(go.Scatter(x=[0, 1, 2], y=[10, 11, 12],mode='lines'),
+                row=1, col=1)
+
+    fig.add_trace(go.Scatter(x=[5, 0, 2], y=[10, 11, 12], name='Close',mode='lines',\
+        line=dict(color='firebrick')),
+                row=1, col=1)
+
+    fig.add_trace(go.Scatter(x=[2, 3, 4], y=[100, 110, 120], name='Aroon', mode='lines',\
+        line=dict(color='royalblue')),
+                row=3, col=1)
+
+    fig.update_traces(line_width=1)
+    fig.update_layout(title='Title',
+    width=1200,
+    height=500)
+
+    fig.show()
+
+
+
+plottingPlotly()
+
+
+
+
+
+
 def main():
     extract = extractFromCSV(tick)
     plotting(extract)
+    plottingPlotly(extract)
 
 
 

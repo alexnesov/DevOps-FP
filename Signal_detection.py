@@ -209,9 +209,9 @@ def getData(tick):
 
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
-    tick='OCGN'
+    tick='ACOR'
     initialDF = getData(tick)
-    df = SignalDetection(df, tick)
+    df = SignalDetection(initialDF, tick)
     lastSignalsDetection(df, tick, start_date, end_date)
 
 
