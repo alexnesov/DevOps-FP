@@ -203,6 +203,17 @@ quRenameTable = "ALTER TABLE signals.Signals_aroon_crossing_copy\
     RENAME AS signals.Signals_aroon_crossing"
 
 
+def csvToRDS(df):
+    df = pd.read_csv(f'utils/batch_{today}.csv')
+    # dataFrame.iloc[<ROWS INDEX RANGE> , <COLUMNS INDEX RANGE>]
+    df = df.iloc[:,1::]
+
+
+    dfToRDS(df=df,table='Signals_aroon_crossing',db_name='signals')
+    db_acc_obj.exc_query(db_name='signals', query=quCopy)
+    db_acc_obj.exc_query(db_name='signals', query=quDeletePreviousTable)
+    db_acc_obj.exc_query(db_name='signals', query=quRenameTable)
+
 
 def main():
     stockexchanges = ['NASDAQ','NYSE']
@@ -227,11 +238,9 @@ def main():
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
-        dfToRDS(df=tocsvDF,table='Signals_aroon_crossing',db_name='signals')
+    csvToRDS()
 
-        db_acc_obj.exc_query(db_name='signals', query=quCopy)
-        db_acc_obj.exc_query(db_name='signals', query=quDeletePreviousTable)
-        db_acc_obj.exc_query(db_name='signals', query=quRenameTable)
+
         
 
         
