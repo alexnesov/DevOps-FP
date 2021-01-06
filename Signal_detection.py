@@ -24,7 +24,7 @@ short_window =10
 long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-start_date = datetime.today() - timedelta(days=10)
+start_date = datetime.today() - timedelta(days=20)
 end_date = f'{today}'
 
 # FullListToAnalyze = pd.read_csv(f"{os.path.dirname(os.path.realpath(__file__))}/Overview.csv")['Ticker'].iloc[list_beg:list_end] # Windows
@@ -174,16 +174,7 @@ def append_list_as_row(file_name,validsymbol):
 
 
 def main(tick):
-    """
-    try:
-        print(f"New https connection for {tick}")
-        df = yf.download(tick, start = "2018-01-01", end = f"{today}", period = "1d")
-        df = SignalDetection(df, tick)
-        lastSignalsDetection(df, tick, start_date, end_date)
-    except KeyError:
-        print(f'Error for {tick}')
-        error.append(tick)
-    """
+
     df = getData(tick)
     try:
         print(f"New RDS DB call connection for {tick}")
@@ -194,13 +185,20 @@ def main(tick):
         print(f'Error for {tick}')
 
 
+def sendSingleRDS():
+    df = pd.read_csv('marketdata.csv')
+    df = df.iloc[:,1:-1]
+    df = df.rename(columns={"Aroon Down":"Aroon_Down",
+    "Aroon Up":"Aroon_Up"})
+
+    dfToRDS(df=df,table='Signals_details',db_name='signals')
 
 
 def getData(tick):
     """
     Pulling from remote RDS
     """
-    qu=f"SELECT * FROM NASDAQ_15 WHERE Symbol='{tick}' and Date>'2020-10-01' "
+    qu=f"SELECT * FROM NASDAQ_15 WHERE Symbol='{tick}' and Date>'2020-01-01' "
     df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
         retres=QuRetType.ALLASPD)
 
@@ -209,27 +207,13 @@ def getData(tick):
 
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
-    tick='ACOR'
+    tick='AAPL'
     initialDF = getData(tick)
     df = SignalDetection(initialDF, tick)
     lastSignalsDetection(df, tick, start_date, end_date)
-
-
-    #df = pd.DataFrame.from_dict(validSymbols)
-    #dfToRDS(df=df,table='Signals',db_name='marketdata')
+    # sendSingleRDS()
 
 
 
-"""
-# Plotly example
-# https://plotly.com/python/time-series/
-import plotly.express as px
-import pandas as pd
-
-df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
-fig = px.line(df, x='Date', y='AAPL.High', title='Time Series with Rangeslider')
-fig.update_xaxes(rangeslider_visible=True)
-fig.show()
-"""
 
 

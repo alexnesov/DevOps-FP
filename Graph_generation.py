@@ -7,12 +7,14 @@ import numpy as np
 import zlib
 from datetime import datetime, timedelta 
 from time import gmtime, strftime
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 # BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick='ACOR'
+tick='AAPL'
 
 #Parameters
 Aroonval = 40
@@ -92,12 +94,11 @@ def plotting(df):
 
 
 
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 
 
 
 def plottingPlotly(df):
+    print(df)
     fig = make_subplots(rows=3, cols=1,
                         shared_xaxes=True,
                         vertical_spacing=0.02,
@@ -131,8 +132,8 @@ def plottingPlotly(df):
     fig.update_traces(line_width=1)
     fig.update_layout(
     title='Trend Reversal Detection',
-    width=1400,
-    height=900)
+    width=1000,
+    height=600)
 
     fig.show()
 
@@ -142,10 +143,9 @@ def plottingPlotly(df):
 
 
 
-
 def main():
     extract = extractFromCSV(tick)
-    plotting(extract)
+    #plotting(extract)
     plottingPlotly(extract)
 
 
