@@ -10,6 +10,9 @@ from time import gmtime, strftime
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
+from utils.db_manage import QuRetType, std_db_acc_obj
+db_acc_obj = std_db_acc_obj() 
+
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
@@ -98,45 +101,56 @@ def plotting(df):
 
 
 def plottingPlotly(df):
+    qu = f"SELECT * FROM signals.Signals_details WHERE Symbol='AAPL'"
+    df = db_acc_obj.exc_query(db_name='signals', query=qu, \
+    retres=QuRetType.ALLASPD)
+
     print(df)
+
     fig = make_subplots(rows=3, cols=1,
                         shared_xaxes=True,
                         vertical_spacing=0.02,
+                        row_width=[0.3, 0.8, 0.2],
                         specs=[[{"rowspan":2}],
                         [None],
                         [{}]])
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['Close'], name='Close', mode='lines'),
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Close'], name='Close', mode='lines+markers',marker_size=4,
+    line=dict(color='royalblue')),
                 row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['long_mavg'], name='long_mvg',mode='lines',
-        line=dict(color='yellow')),
+    fig.add_trace(go.Scatter(x=df.Date, y=df['long_mavg'], name='long_mvg 50',mode='lines',
+        line=dict(color='orange',dash='dash')),
                 row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['short_mavg'], name='short_mvg',mode='lines',
+    fig.add_trace(go.Scatter(x=df.Date, y=df['short_mavg'], name='short_mvg 10',mode='lines',
         line=dict(color='firebrick')),
                 row=1, col=1)
 
     fig.add_trace(go.Scatter(x=df.Date[df.positions==1], y=df.short_mavg[df.positions==1], 
-    name='signal',mode='markers', marker_symbol='triangle-up', marker_color='green'),
+    name='crossing',mode='markers', marker_symbol='triangle-up', marker_size=10, marker_color='green'),
                 row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon Up'], name='Aroon Up', mode='lines',
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon_Up'], name='Aroon Up', mode='lines',
         line=dict(color='green')),
                 row=3, col=1)
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon Down'], name='Aroon Down', mode='lines',\
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon_Down'], name='Aroon Down', mode='lines',\
         line=dict(color='red')),
                 row=3, col=1)
 
-    fig.update_traces(line_width=1)
+
+    fig.update_traces(line_width=1.5)
     fig.update_layout(
-    title='Trend Reversal Detection',
-    width=1000,
-    height=600)
+    title='Trend Reversal Detection (AAPL)',
+    width=1400,
+    height=900,
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    )
+    fig.update_yaxes(showline=False, linewidth=1,gridwidth=0.2, linecolor='grey', gridcolor='rgba(192,192,192,0.5)')
 
     fig.show()
-
 
 
 

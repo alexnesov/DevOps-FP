@@ -97,7 +97,7 @@ def SignalDetection(df, tick, *args):
 
     df['symbol'] = tick
 
-    # csvAppend(df)
+    #csvAppend(df)
 
     return df
 
@@ -203,7 +203,7 @@ quRenameTable = "ALTER TABLE signals.Signals_aroon_crossing_copy\
     RENAME AS signals.Signals_aroon_crossing"
 
 
-def csvToRDS(df):
+def csvToRDS():
     df = pd.read_csv(f'utils/batch_{today}.csv')
     # dataFrame.iloc[<ROWS INDEX RANGE> , <COLUMNS INDEX RANGE>]
     df = df.iloc[:,1::]
@@ -239,6 +239,7 @@ def main():
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
     csvToRDS()
+
 
 
         
