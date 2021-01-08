@@ -211,7 +211,6 @@ if __name__ == "__main__":
     initialDF = getData(tick)
     df = SignalDetection(initialDF, tick)
     lastSignalsDetection(df, tick, start_date, end_date)
-    # sendSingleRDS()
 
 
 

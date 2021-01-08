@@ -141,9 +141,12 @@ def dailyBatchUpload(file):
     if "NASDAQ" in file:
         dfToRDS(df=df,table='NASDAQ_15',db_name='marketdata',location='RDS')
         dfToRDS(df=df,table='US_TODAY',db_name='marketdata',location='RDS')
+        dfToRDS(df=df,table='NASDAQ_20',db_name='marketdata',location='RDS')
+    
     else:
         dfToRDS(df=df,table='NYSE_15',db_name='marketdata',location='RDS')
         dfToRDS(df=df,table='US_TODAY',db_name='marketdata',location='RDS')
+        dfToRDS(df=df,table='NYSE_20',db_name='marketdata',location='RDS')
     return df
 
 

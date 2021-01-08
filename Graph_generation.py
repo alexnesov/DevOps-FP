@@ -98,14 +98,13 @@ def plotting(df):
 
 
 
+qu = f"SELECT * FROM signals.Signals_details WHERE Symbol='AAPL'"
+df = db_acc_obj.exc_query(db_name='signals', query=qu, \
+retres=QuRetType.ALLASPD)
 
 
 def plottingPlotly(df):
-    qu = f"SELECT * FROM signals.Signals_details WHERE Symbol='AAPL'"
-    df = db_acc_obj.exc_query(db_name='signals', query=qu, \
-    retres=QuRetType.ALLASPD)
 
-    print(df)
 
     fig = make_subplots(rows=3, cols=1,
                         shared_xaxes=True,
