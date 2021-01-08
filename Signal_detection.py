@@ -29,10 +29,8 @@ end_date = f'{today}'
 
 # FullListToAnalyze = pd.read_csv(f"{os.path.dirname(os.path.realpath(__file__))}/Overview.csv")['Ticker'].iloc[list_beg:list_end] # Windows
 currentDirectory = os.getcwd() # Ubuntu
-FullListToAnalyze = pd.read_csv(f"{currentDirectory}/NASDAQ.csv")['Symbol'].iloc[list_beg:list_end]
 
 # file that is going to contain valid symbols
-file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
 
 
 notvalid = []
@@ -45,8 +43,6 @@ keys = ['ValidTick','SignalDate','ScanDate']
 validSymbols = {}
 for k in keys:
     validSymbols[k] = []
-
-
 
 
 
@@ -76,7 +72,6 @@ def SignalDetection(df, tick, *args):
     df['signal'] = pd.Series(np.zeros(len(df)))
     df['signal_aroon'] = pd.Series(np.zeros(len(df)))
     df = df.reset_index()
-    
     # Moving averages
     df['short_mavg'] = df['Close'].rolling(window=short_window, min_periods=1, center=False).mean()
     df['long_mavg'] = df['Close'].rolling(window=long_window, min_periods=1, center=False).mean()
@@ -99,10 +94,9 @@ def SignalDetection(df, tick, *args):
 
     df['symbol'] = tick
 
-    csvAppend(df)
+    #csvAppend(df)
 
     return df
-
 
 
 
@@ -151,41 +145,14 @@ def csvAppend(df):
     global init
 
     if init == True:
-        df.to_csv('marketdata.csv', index=False)
+        df.to_csv('detailedSignals.csv', index=False)
         init = False
     else:
-        df.to_csv('marketdata.csv', mode='a', index=False, header=False)
+        df.to_csv('detailedSignals.csv', mode='a', index=False, header=False)
 
 
 
-
-def append_list_as_row(file_name,validsymbol):
-    """
-    Inserts valid symbols in a csv in the current directory
-    """
-    # Open file in append mode
-    with open(file_name, 'a+', newline='') as write_obj:
-        # Create a writer object from csv module
-        csv_writer = writer(write_obj)
-        # Add contents of list as last row in the csv file
-        csv_writer.writerow(validsymbol)
-
-
-
-
-def main(tick):
-
-    df = getData(tick)
-    try:
-        print(f"New RDS DB call connection for {tick}")
-        df = getData(tick)
-        df = SignalDetection(df, tick)
-        lastSignalsDetection(df, tick, start_date, end_date)
-    except KeyError:
-        print(f'Error for {tick}')
-
-
-def sendSingleRDS():
+def sendSingleRDS(df):
     df = pd.read_csv('marketdata.csv')
     df = df.iloc[:,1:-1]
     df = df.rename(columns={"Aroon Down":"Aroon_Down",
@@ -194,25 +161,66 @@ def sendSingleRDS():
     dfToRDS(df=df,table='Signals_details',db_name='signals')
 
 
-def getData(tick):
+def getData():
     """
     Pulling from remote RDS
     """
-    qu=f"SELECT * FROM NASDAQ_15 WHERE Symbol='{tick}' and Date>'2020-01-01' "
+    qu=f"SELECT * FROM NASDAQ_20 WHERE Symbol IN \
+        (SELECT DISTINCT ValidTick FROM signals.Signals_aroon_crossing_evol)"
     df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
         retres=QuRetType.ALLASPD)
 
     return df
 
 
+def getSignaledStocks():
+    """
+    Pull (from RDS) list of stocks that were previously signaled
+    """
+    qu=f"SELECT DISTINCT ValidTick FROM signals.Signals_aroon_crossing_evol"
+    df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
+        retres=QuRetType.ALLASPD)
+
+    return df
+
+def cleanTable(df):
+    df = df.iloc[:,1:-1]
+    df = df.rename(columns={"Aroon Down":"Aroon_Down",
+    "Aroon Up":"Aroon_Up"})
+
+    return df
+
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
-    tick='AAPL'
+    
+    # Get list of tickers for loop
+    df = getSignaledStocks()
+    tickers = df['ValidTick'].to_list()
+    tickers.sort()
+    
+    initialDF = getData()
+    for tick in tickers:
+        try:
+            print(tick)
+            filteredDF = initialDF.loc[initialDF['Symbol']==f'{tick}']
+            print("filteredDF: OK")
+            df = SignalDetection(filteredDF, tick)
+            print("SignalDetection: OK")
+            
+            csvAppend(df)
+            print('-----------APPENDF DF------------')
+        except:
+            print(f"Error for {tick}")
+    finalDF = pd.read_csv('detailedSignals.csv')
+    finalDF = cleanTable(finalDF)
+    dfToRDS(df=finalDF,table='Signals_details',db_name='signals')
+
+    """
+    # One single tick
+    tick='CDXC'
     initialDF = getData(tick)
     df = SignalDetection(initialDF, tick)
     lastSignalsDetection(df, tick, start_date, end_date)
-
-
-
+    """
 
 

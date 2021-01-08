@@ -17,7 +17,7 @@ today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 # BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick='AAPL'
+tick='CDXC'
 
 #Parameters
 Aroonval = 40
@@ -98,9 +98,6 @@ def plotting(df):
 
 
 
-qu = f"SELECT * FROM signals.Signals_details WHERE Symbol='AAPL'"
-df = db_acc_obj.exc_query(db_name='signals', query=qu, \
-retres=QuRetType.ALLASPD)
 
 
 def plottingPlotly(df):
@@ -130,18 +127,18 @@ def plottingPlotly(df):
     name='crossing',mode='markers', marker_symbol='triangle-up', marker_size=10, marker_color='green'),
                 row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon_Up'], name='Aroon Up', mode='lines',
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon Up'], name='Aroon Up', mode='lines',
         line=dict(color='green')),
                 row=3, col=1)
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon_Down'], name='Aroon Down', mode='lines',\
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon Down'], name='Aroon Down', mode='lines',\
         line=dict(color='red')),
                 row=3, col=1)
 
 
     fig.update_traces(line_width=1.5)
     fig.update_layout(
-    title='Trend Reversal Detection (AAPL)',
+    title=f'Trend Reversal Detection ({tick})',
     width=1400,
     height=900,
     paper_bgcolor='rgba(0,0,0,0)',
@@ -157,8 +154,12 @@ def plottingPlotly(df):
 
 
 def main():
+    """
+    qu = f"SELECT * FROM signals.Signals_details WHERE Symbol='{tick}'"
+    df = db_acc_obj.exc_query(db_name='signals', query=qu, \
+    retres=QuRetType.ALLASPD)
+    """
     extract = extractFromCSV(tick)
-    #plotting(extract)
     plottingPlotly(extract)
 
 
