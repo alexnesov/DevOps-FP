@@ -91,43 +91,6 @@ def SignalDetection(df, tick, *args):
 
 
 
-def lastSignalsDetection(signals_df, tick, start_date, end_date):
-    """
-
-    param: df (one tick) with all signals already detected
-
-    Checking if signal is present in the last x days (start_date & end_date)
-    Func doesn't return anything, it appends selected stock for given time interval in empty list
-    (list = validsymbol)
-    """
-    DFfinalsignal = signals_df[['Date','doubleSignal']]
-    DFfinalsignal['Date'] = pd.to_datetime(DFfinalsignal['Date'], format='%Y-%m-%d')
-    DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
-    mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
-    DFfinalsignal = DFfinalsignal.loc[mask]
-    true_false = list(DFfinalsignal['doubleSignal'].isin(["1"]))
-
-
-    # Append the selected symbols to empty initialized list "validsymbol"
-    if True in true_false:
-        lastSignalDate = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
-        lastSignalDate = list(lastSignalDate.loc[-1:]['Date'])[0].strftime("%Y-%m-%d")
-
-
-        validSymbols['ValidTick'].append(tick) 
-        validSymbols['SignalDate'].append(lastSignalDate)
-        validSymbols['ScanDate'].append(today)
-
-
-
-        print(f'Ok for {tick}')
-    else:
-        print(f'No signal for this time frame for {tick}')
-        notvalid.append(tick)
-
-    print(f"Number not valid: {len(notvalid)}")
-
-
 
 def csvAppend(df):
     """
@@ -141,15 +104,6 @@ def csvAppend(df):
     else:
         df.to_csv('detailedSignals.csv', mode='a', index=False, header=False)
 
-
-
-def sendSingleRDS(df):
-    df = pd.read_csv('marketdata.csv')
-    df = df.iloc[:,1:-1]
-    df = df.rename(columns={"Aroon Down":"Aroon_Down",
-    "Aroon Up":"Aroon_Up"})
-
-    dfToRDS(df=df,table='Signals_details',db_name='signals')
 
 
 def getData():
@@ -189,12 +143,15 @@ def deleteFromRDS():
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
     
-    # Get list of tickers for loop
+    # 1. Get a List of signaled tickers for loop
     df = getSignaledStocks()
     tickers = df['ValidTick'].to_list()
     tickers.sort()
-    
+    ###########################################
+
+    # 2. Get an actual DF containing financial info. for Signal detect.
     initialDF = getData()
+
     for tick in tickers:
         try:
             print(tick)
@@ -203,6 +160,7 @@ if __name__ == "__main__":
             df = SignalDetection(filteredDF, tick)
             print("SignalDetection: OK")
             
+            # 3. Appending each new report for each tick to detailedSignals.csv
             csvAppend(df)
             print('-----------APPENDF DF------------')
         except:
