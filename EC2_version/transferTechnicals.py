@@ -4,21 +4,17 @@ import numpy as np
 import os
 from datetime import datetime, timedelta 
 import fnmatch
-
 today = str(datetime.today().strftime('%Y-%m-%d'))
+yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
 
-
-
-
-
-df = pd.read_csv(f'~/financials-downloader-bot/downloads/{fileName}')
-
-fileNames = os.listdir('/home/ubuntu/financials-downloader-bot/downloads/Technical')
+"""
+# For many files
+fileNames = os.listdir('/home/ubuntu/financials-downloader-bot/downloads/')
 TechnicalFiles = []
 for file in fileNames:
     if fnmatch.fnmatch(file, 'Technical*'):
         TechnicalFiles.append(file)
-
+"""
 
 
 class technicalsToRDS():
@@ -47,7 +43,21 @@ class technicalsToRDS():
 
 
 errors = []
+
 def main():
+    """
+    One file: today
+    """
+    df = pd.read_csv(f'~/financials-downloader-bot/downloads/Technical_{yesterday}.csv')
+    print(df)
+    filename = f'Technical_{yesterday}.csv'
+    std = technicalsToRDS(filename,df)
+    std.addDateToDF()
+    std.renameCols()
+    std.sendData()
+
+
+def manyFiles():
     TechnicalFiles.sort()
     for file in TechnicalFiles:
         try:
