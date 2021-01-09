@@ -85,32 +85,31 @@ def SignalDetection(df, tick, *args):
 
     df['symbol'] = tick
 
-    #csvAppend(df)
-
     return df
 
 
 
-
-def csvAppend(df):
+def csvAppend(df, outputFileName):
     """
     appends df corresponding to each stock to a final csv, that is then going to be send to RDS
     """
     global init
 
     if init == True:
-        df.to_csv('detailedSignals.csv', index=False)
+        df.to_csv(f'{outputFileName}.csv', index=False)
         init = False
     else:
-        df.to_csv('detailedSignals.csv', mode='a', index=False, header=False)
+        df.to_csv(f'{outputFileName}.csv', mode='a', index=False, header=False)
 
 
 
-def getData():
+def getData(se):
     """
+    :param 1: stock exchange (ex: NYSE or NASDAQ)
+
     Pulling from remote RDS
     """
-    qu=f"SELECT * FROM NASDAQ_20 WHERE Symbol IN \
+    qu=f"SELECT * FROM {se}_20 WHERE Symbol IN \
         (SELECT DISTINCT ValidTick FROM signals.Signals_aroon_crossing_evol)"
     df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
         retres=QuRetType.ALLASPD)
@@ -123,7 +122,7 @@ def getSignaledStocks():
     Pull (from RDS) list of stocks that were previously signaled
     """
     qu=f"SELECT DISTINCT ValidTick FROM signals.Signals_aroon_crossing_evol"
-    df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
+    df = db_acc_obj.exc_query(db_name='signals', query=qu,\
         retres=QuRetType.ALLASPD)
 
     return df
@@ -138,11 +137,16 @@ def cleanTable(df):
 def deleteFromRDS():
     """
     """
-    pass
+    qu=f"DELETE FROM signals.Signals_details"
+    db_acc_obj.exc_query(db_name='signals', query=qu)
+
+
+
 
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
-    
+    SEs = ["NYSE", "NASDAQ"]
+
     # 1. Get a List of signaled tickers for loop
     df = getSignaledStocks()
     tickers = df['ValidTick'].to_list()
@@ -150,36 +154,35 @@ if __name__ == "__main__":
     ###########################################
 
     # 2. Get an actual DF containing financial info. for Signal detect.
-    initialDF = getData()
+    for se in SEs:
+        print(se)
+        initialDF = getData(se)
+      #  initialDF = getData('NYSE')
+        csvAppend(initialDF,'initialDF')
 
+    init = True
     for tick in tickers:
         try:
             print(tick)
+            # INITIIIIAL DF
             filteredDF = initialDF.loc[initialDF['Symbol']==f'{tick}']
             print("filteredDF: OK")
             df = SignalDetection(filteredDF, tick)
             print("SignalDetection: OK")
             
             # 3. Appending each new report for each tick to detailedSignals.csv
-            csvAppend(df)
+            csvAppend(df,'detailedSignals')
             print('-----------APPENDF DF------------')
         except:
             print(f"Error for {tick}")
 
     finalDF = pd.read_csv('detailedSignals.csv')
     finalDF = cleanTable(finalDF)
+
+    deleteFromRDS()
     dfToRDS(df=finalDF,table='Signals_details',db_name='signals')
+    print("To RDS: OK")
 
 
-
-
-
-    """
-    # One single tick
-    tick='CDXC'
-    initialDF = getData(tick)
-    df = SignalDetection(initialDF, tick)
-    lastSignalsDetection(df, tick, start_date, end_date)
-    """
 
 
