@@ -9,11 +9,15 @@
 </div>
 
 
+
+Useful link: </br>
+http://www.tadoc.org/index.htm </br>
+https://github.com/mrjbq7/ta-lib </br>
+
 <h4> To do:</h4>
 
 <ul>
-<li>Create a DB access object for automatic daily ingestion of EOD</li>
-<li>Implement visualisation capaibilities</li>
+n.a
 </ul>
 
 
