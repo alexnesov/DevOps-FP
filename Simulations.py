@@ -206,7 +206,6 @@ def main():
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
-    csvToRDS()
 
 
 
