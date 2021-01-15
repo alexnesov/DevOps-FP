@@ -7,8 +7,6 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 30 9 * * 1 cd ~/financials-downloader-bot && :> geckodriver.log
 
-5 21 * * 1-5 cd ~/Signal-Detection && python3 transferTechnicals.py
-
 # Get EOD (Tueseday to Saturday, because end US market = 22 here and EOD data gets uploaded after 24)
 8 7 * * 2-6 cd ~/eoddata && python3 eoddata.py -e '<>' -p '<>' -s 'NYSE' > downloads/logs/log_$(date +\%Y_\%m_\%d).log
 9 7 * * 2-6 cd ~/eoddata && python3 eoddata.py -e '<>' -p '<>' -s 'NASDAQ' >> downloads/logs/log_$(date +\%Y_\%m_\%d).log
@@ -22,5 +20,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 33 7 * * 2-6 . ~/.bashrc; cd ~/Signal-Detection && python3 DetailedGeneration.py
 
-25 21 * * 2-6 . ~/.bashrc; cd ~/Signal-Detection && python3 sp500.py
+25 21 * * 1-5 . ~/.bashrc; cd ~/Signal-Detection && python3 sp500.py
 
+10 21 * * 1-5 . ~/.bashrc; cd ~/Signal-Detection && python3 transferTechnicals.py
+11 21 * * 1-5 . ~/.bashrc; cd ~/Signal-Detection && python3 transferOwnership.py
