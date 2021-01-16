@@ -105,7 +105,7 @@ def plottingPlotly(df):
 
     fig = make_subplots(rows=3, cols=1,
                         shared_xaxes=True,
-                        vertical_spacing=0.02,
+                        vertical_spacing=0.12,
                         row_width=[0.3, 0.8, 0.2],
                         specs=[[{"rowspan":2}],
                         [None],
@@ -124,14 +124,18 @@ def plottingPlotly(df):
                 row=1, col=1)
 
     fig.add_trace(go.Scatter(x=df.Date[df.positions==1], y=df.short_mavg[df.positions==1], 
-    name='crossing',mode='markers', marker_symbol='triangle-up', marker_size=10, marker_color='green'),
+    name='MA crossing',mode='markers', marker_symbol='triangle-up', marker_size=10, marker_color='blue'),
+                row=1, col=1)
+    
+    fig.add_trace(go.Scatter(x=df.Date[df.doubleSignal==1], y=df.short_mavg[df.doubleSignal==1], 
+    name='Double Signal',mode='markers', marker_symbol='triangle-up', marker_size=15, marker_color='green'),
                 row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon Up'], name='Aroon Up', mode='lines',
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon_Up'], name='Aroon Up', mode='lines',
         line=dict(color='green')),
                 row=3, col=1)
 
-    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon Down'], name='Aroon Down', mode='lines',\
+    fig.add_trace(go.Scatter(x=df.Date, y=df['Aroon_Down'], name='Aroon Down', mode='lines',\
         line=dict(color='red')),
                 row=3, col=1)
 
@@ -139,16 +143,30 @@ def plottingPlotly(df):
     fig.update_traces(line_width=1.5)
     fig.update_layout(
     title=f'Trend Reversal Detection ({tick})',
-    width=1400,
-    height=900,
-    paper_bgcolor='rgba(0,0,0,0)',
+    #width=1400,
+    height=600,
     plot_bgcolor='rgba(0,0,0,0)',
+    margin=dict(
+    autoexpand=False,
+    l=100,
+    r=20,
+    t=110,
+    ),
+    legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+)
     )
     fig.update_yaxes(showline=False, linewidth=1,gridwidth=0.2, linecolor='grey', gridcolor='rgba(192,192,192,0.5)')
 
+    fig['layout']['xaxis2']['title']='Date'
+    fig['layout']['yaxis']['title']='Close'
+    fig['layout']['yaxis2']['title']='Aroon'
+
     fig.show()
-
-
 
 
 

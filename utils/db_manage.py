@@ -233,14 +233,7 @@ def listTables():
     conn.close()
 
 
-def display():
-    """
-    """
-    c.execute('''SELECT * FROM NASDAQ_2020_10_01 limit 10''')
-    rows = c.fetchone()
-
-
-
+   
 
 
 
