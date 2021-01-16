@@ -151,10 +151,12 @@ def csvAppend(df, outputFileName):
     appends df corresponding to each stock to a final csv, that is then going to be send to RDS
     """
     global init
+    global initStock
 
     if init == True:
         df.to_csv(f'{outputFileName}.csv', index=False)
         init = False
+        initStock = False
     else:
         df.to_csv(f'{outputFileName}.csv', mode='a', index=False, header=False)
 
@@ -216,11 +218,13 @@ if __name__ == "__main__":
     ###########################################
 
     # 2. Get an actual DF containing financial info. for Signal detect.
+    initStock = True
     for se in SEs:
         print(se)
         initialDF = getData(se)
-      #  initialDF = getData('NYSE')
         csvAppend(initialDF,'initialDF')
+        
+    initialDF = pd.read_csv('initialDF.csv')
 
     init = True
     for tick in tickers:
@@ -243,6 +247,7 @@ if __name__ == "__main__":
             # 3. Appending each new report for each tick to detailedSignals.csv
             csvAppend(df,'detailedSignals')
             print('-----------APPENDF DF------------')
+
         except:
             print(f"Error for {tick}")
 
@@ -250,7 +255,7 @@ if __name__ == "__main__":
     finalDF = cleanTable(finalDF)
     finalDF = finalDF.drop(columns=['symbol'])
     deleteFromRDS()
-    dfToRDS(df=finalDF,table='Signals_details',db_name='signals')
+    #dfToRDS(df=finalDF,table='Signals_details',db_name='signals')
     print("To RDS: OK")
 
 
