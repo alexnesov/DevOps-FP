@@ -37,6 +37,63 @@ for k in keys:
     validSymbols[k] = []
 
 
+
+def TR(d,c,h,l,o,yc):
+    '''
+    :param d: day
+    :param c: close
+    :param h: high
+    :param l: low
+    :param o: open
+    :param yc: yesterday's close
+    '''
+    x = h-l
+    y = abs(h-yc)
+    z = abs(l-yc)
+
+    if y <= x > z:
+        TR = x
+    elif x <= y >=z:
+        TR = y
+    elif x <= z >=y:
+        TR = z
+
+    return d, TR
+
+def makeTRArrays(df):
+    x = 1
+    TRDates = []
+
+    while x < len(df.Date):
+                            # TR(d,c,h,l,o,yc):
+        TRDate, TrueRange = TR(df.Date[x],df.Close[x],df.High[x],df.Low[x],
+        df.Open[x],df.Close[x-1])
+        TRDates.append(TRDate)
+        TrueRanges.append(TrueRange)
+        x+=1
+
+    #Inserting a NaN at begining, otherwise arrays is not same length as Df and 
+    # it would return an error
+    TrueRanges.insert(0, np.nan)
+
+
+    # issue with 0 when using log scale. Turnaround is to replace 0's by 0.0001 for example.
+    #a = np.array(TrueRanges)
+    #a = np.where(a==0,0.001,a)
+    df['TR'] = TrueRanges
+
+    return df
+
+
+def ExpMovingAverage(values, window):
+    weights = np.exp(np.linspace(-1., 0., window))
+    weights /= weights.sum()
+    a = np.convolve(values, weights,mode='full')[:len(values)]
+    a[:window] = a[window]
+    return a
+
+
+
 def SignalDetection(df, tick, *args):
     """
     This function downloads prices for desired quotes (those in the parameter)
@@ -128,7 +185,7 @@ def getSignaledStocks():
     return df
 
 def cleanTable(df):
-    df = df.iloc[:,1:-1]
+    df = df.iloc[:,1:]
     df = df.rename(columns={"Aroon Down":"Aroon_Down",
     "Aroon Up":"Aroon_Up"})
 
@@ -143,7 +200,12 @@ def deleteFromRDS():
 
 
 
+
+
 if __name__ == "__main__":
+
+
+
     db_acc_obj = std_db_acc_obj() 
     SEs = ["NYSE", "NASDAQ"]
 
@@ -163,13 +225,21 @@ if __name__ == "__main__":
     init = True
     for tick in tickers:
         try:
+            TrueRanges = []
             print(tick)
             # INITIIIIAL DF
             filteredDF = initialDF.loc[initialDF['Symbol']==f'{tick}']
             print("filteredDF: OK")
             df = SignalDetection(filteredDF, tick)
+
             print("SignalDetection: OK")
-            
+
+            #### TRUE RANGES ####
+            df = makeTRArrays(df)
+            ATR = ExpMovingAverage(TrueRanges,7)
+            df['ATR'] = ATR
+            #### TRUE RANGES ####
+
             # 3. Appending each new report for each tick to detailedSignals.csv
             csvAppend(df,'detailedSignals')
             print('-----------APPENDF DF------------')
@@ -178,7 +248,7 @@ if __name__ == "__main__":
 
     finalDF = pd.read_csv('detailedSignals.csv')
     finalDF = cleanTable(finalDF)
-
+    finalDF = finalDF.drop(columns=['symbol'])
     deleteFromRDS()
     dfToRDS(df=finalDF,table='Signals_details',db_name='signals')
     print("To RDS: OK")
