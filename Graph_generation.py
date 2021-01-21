@@ -17,12 +17,17 @@ today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 # BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick='AAME'
+tick='BHV'
 
+"""
 #Parameters
 Aroonval = 40
 short_window =10
 long_window = 50
+"""
+Aroonval = 40
+short_window =50
+long_window = 200
 
 
 def extractFromCSV(tick):
