@@ -161,34 +161,11 @@ def csvAppend(df):
 
 
 
-def append_list_as_row(file_name,validsymbol):
-    """
-    Inserts valid symbols in a csv in the current directory
-    """
-    # Open file in append mode
-    with open(file_name, 'a+', newline='') as write_obj:
-        # Create a writer object from csv module
-        csv_writer = writer(write_obj)
-        # Add contents of list as last row in the csv file
-        csv_writer.writerow(validsymbol)
-
-
-
-
 def sqliteToDF(table,dbanme='marketdataSQL.db'):
     conn = sqlite3.connect(f'utils/{dbanme}')
     qu = f"SELECT * FROM {table}"
     df = pd.read_sql(qu, conn)
     return df
-
-
-def listTables():
-    conn = sqlite3.connect('utils/marketdataSQL.db')
-    c = conn.cursor()
-    c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    print(c.fetchall())
-    conn.close()
-
 
 
 

@@ -17,7 +17,7 @@ today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 # BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick='CDXC'
+tick='AAME'
 
 #Parameters
 Aroonval = 40
@@ -33,67 +33,6 @@ def extractFromCSV(tick):
     extract['Date'] = pd.to_datetime(extract['Date'])
 
     return extract
-
-
-
-def plotting(df):
-    """
-    Plots a graph to represent signals for the desired timeframe. Uses the "df" the function
-    "SignalDetection()" returns
-    :param p1: dataframe with signals
-    """
-    finalplot = plt.figure(1,figsize=(17, 10))
-    stock = plt.subplot2grid((8,2), (0,0), rowspan = 4, colspan = 4)
-    aroon = plt.subplot2grid((8,2), (4,0), rowspan = 2, colspan = 4,sharex=stock)
-    rsi = plt.subplot2grid((8,2), (6,0), rowspan = 2, colspan = 4,sharex=stock)
-    # obv_plot = plt.subplot2grid((10,2), (8,0), rowspan = 2, colspan = 4,sharex=stock)
-
-
-    finalplot.suptitle(f"{tick}, A:{Aroonval},SW:{short_window}, LW:{long_window}", fontsize=15)
-    stock.plot("Date", "Close", data=df, 
-                            label="Close", linewidth=1, alpha=0.8)
-    stock.plot("Date", "short_mavg", data=df, 
-                            label="short_mavg", linewidth=1, alpha=0.8)
-    stock.plot("Date", "long_mavg", data=df, 
-                            label="long_mavg", linewidth=1, alpha=0.8)
-
-
-    aroon.plot("Date", "Aroon Up", data=df, 
-                            label="Aroon Up", linewidth=1, alpha=0.8, color="green")
-    aroon.plot("Date", "Aroon Down", data=df, 
-                            label="Aroon Down", linewidth=1, alpha=0.8, color="red")
-    rsi.plot("Date", "RSI", data=df, 
-                            label="RSI", linewidth=1, alpha=0.8, color="purple")
-
-    xcoords_aroon =df.Date[df.doubleSignal==1]
-    for xc in xcoords_aroon:
-        stock.axvline(x=xc, color='purple', alpha=0.7)
-
-    stock.plot(df.Date[df.positions==1], df.positions[df.positions==1], '^', markersize=10, color='gold')
-    stock.plot(df.Date[df.doubleSignal==1], df.doubleSignal[df.doubleSignal==1], '^', markersize=10, color='purple')
-    aroon.plot(df.Date[df.positions_aroon==1], df.positions_aroon[df.positions_aroon==1], '^', markersize=10, color='g')
-
-    aroon.axhline(y=70, color='g', linestyle='--')
-    aroon.axhline(y=30, color='r', linestyle='--')
-
-    rsi.axhline(y=55, color='r', linestyle='--')
-    rsi.axhline(y=70, color='b', linestyle='--')
-
-    stock.spines['top'].set_visible(False)
-    stock.spines['right'].set_visible(False)
-    aroon.spines['top'].set_visible(False)
-    aroon.spines['right'].set_visible(False)
-    rsi.spines['top'].set_visible(False)
-    rsi.spines['right'].set_visible(False)
-
-    plt.setp(stock.get_xticklabels(), visible=False)
-    plt.setp(aroon.get_xticklabels(), visible=False)
-
-    stock.grid(color='grey', linestyle='-', linewidth=0.25, alpha=0.6)
-    aroon.grid(color='grey', linestyle='-', linewidth=0.25, alpha=0.6)
-    rsi.grid(color='grey', linestyle='-', linewidth=0.25, alpha=0.6)
-
-    plt.legend()
 
 
 
@@ -143,7 +82,7 @@ def plottingPlotly(df):
     fig.update_traces(line_width=1.5)
     fig.update_layout(
     title=f'Trend Reversal Detection ({tick})',
-    #width=1400,
+    width=1400,
     height=600,
     plot_bgcolor='rgba(0,0,0,0)',
     margin=dict(
@@ -172,12 +111,10 @@ def plottingPlotly(df):
 
 
 def main():
-    """
-    qu = f"SELECT * FROM signals.Signals_details WHERE Symbol='{tick}'"
-    df = db_acc_obj.exc_query(db_name='signals', query=qu, \
-    retres=QuRetType.ALLASPD)
-    """
-    extract = extractFromCSV(tick)
+    extract = pd.read_csv('single.csv')
+    extract = extract.iloc[:,1:-1]
+    extract = extract.rename(columns={"Aroon Down":"Aroon_Down",
+    "Aroon Up":"Aroon_Up"})
     plottingPlotly(extract)
 
 

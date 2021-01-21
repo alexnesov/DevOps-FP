@@ -255,7 +255,7 @@ if __name__ == "__main__":
     finalDF = cleanTable(finalDF)
     finalDF = finalDF.drop(columns=['symbol'])
     deleteFromRDS()
-    #dfToRDS(df=finalDF,table='Signals_details',db_name='signals')
+    dfToRDS(df=finalDF,table='Signals_details',db_name='signals')
     print("To RDS: OK")
 
 
