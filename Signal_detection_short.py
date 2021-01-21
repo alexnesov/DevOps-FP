@@ -19,8 +19,8 @@ now = now.replace(":","-")
 
 # PARAMETERS
 Aroonval = 40
-short_window =50
-long_window = 200
+short_window =10
+long_window = 50
 
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
