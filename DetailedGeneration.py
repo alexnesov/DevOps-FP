@@ -254,8 +254,18 @@ if __name__ == "__main__":
     finalDF = pd.read_csv('detailedSignals.csv')
     finalDF = cleanTable(finalDF)
     finalDF = finalDF.drop(columns=['symbol'])
+
+    lenDF = len(finalDF)
+    remainder = lenDF%50000
+    nChunks = int(lenDF/50000)
+    
+
+    finaleDFone = finalDF[:10] 
+    finaleDFtwo = finalDF[11:20]
+    finaleDFonetwo = finalDF[10:21]
+
     deleteFromRDS()
-    dfToRDS(df=finalDF,table='Signals_details',db_name='signals')
+    dfToRDS(df=finaleDFone,table='Signals_details',db_name='signals')
     print("To RDS: OK")
 
 
