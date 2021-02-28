@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from time import gmtime, strftime
 from csv import writer
 import os
+import time 
 
 from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
 
@@ -202,8 +203,6 @@ def deleteFromRDS():
 
 
 
-
-
 if __name__ == "__main__":
 
 
@@ -255,18 +254,35 @@ if __name__ == "__main__":
     finalDF = cleanTable(finalDF)
     finalDF = finalDF.drop(columns=['symbol'])
 
-    lenDF = len(finalDF)
-    remainder = lenDF%50000
-    nChunks = int(lenDF/50000)
-    
-
-    finaleDFone = finalDF[:10] 
-    finaleDFtwo = finalDF[11:20]
-    finaleDFonetwo = finalDF[10:21]
 
     deleteFromRDS()
-    dfToRDS(df=finaleDFone,table='Signals_details',db_name='signals')
-    print("To RDS: OK")
+
+    lenDF = len(finalDF)
+    nChunks = round(lenDF/50000)
+
+    initChunk = True
+    for i in list(range(nChunks)):
+        if initChunk==True:
+            chunk = finalDF[0:50000]
+            initChunk = False
+            currentChunk = 50000
+            print("Sending chunk n°:", i)
+            print('sleep. . .')
+            dfToRDS(df=chunk,table='Signals_details',db_name='signals')
+            time.sleep(5)
+            print('Next chunk')
+        else:
+            nextChunk = currentChunk + 50000
+            chunk = finalDF[currentChunk:nextChunk]
+            currentChunk = nextChunk
+            print("Sending chunk n°:", i)
+            print('sleep. . .')
+            dfToRDS(df=chunk,table='Signals_details',db_name='signals')
+            time.sleep(5)
+            if i<nChunks:
+                print('Next chunk')
+    print("To RDS: Completed!")
+
 
 
 
