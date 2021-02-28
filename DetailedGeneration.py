@@ -262,6 +262,10 @@ if __name__ == "__main__":
 
     initChunk = True
     for i in list(range(nChunks)):
+        """
+        Sending the data by chunks otherwise EC2 --> RDS conn. stops for obscure reasons.
+        Sleep seems also necessary. 5 secs seems ok.
+        """
         if initChunk==True:
             chunk = finalDF[0:50000]
             initChunk = False
