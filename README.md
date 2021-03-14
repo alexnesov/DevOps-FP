@@ -10,7 +10,7 @@
 
 
 
-Useful link: </br>
+Useful links: </br>
 http://www.tadoc.org/index.htm </br>
 https://github.com/mrjbq7/ta-lib </br>
 
