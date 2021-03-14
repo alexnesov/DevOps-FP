@@ -1,3 +1,5 @@
+
+
 import pandas as pd
 import yfinance as yf
 from talib import MA_Type
@@ -163,13 +165,13 @@ def csvAppend(df, outputFileName):
 
 
 
-def getData(se):
+def getData(stockExchange):
     """
     :param 1: stock exchange (ex: NYSE or NASDAQ)
 
     Pulling from remote RDS
     """
-    qu=f"SELECT * FROM {se}_20 WHERE Symbol IN \
+    qu=f"SELECT * FROM {stockExchange}_20 WHERE Symbol IN \
         (SELECT DISTINCT ValidTick FROM signals.Signals_aroon_crossing_evol)"
     df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
         retres=QuRetType.ALLASPD)
@@ -201,11 +203,41 @@ def deleteFromRDS():
     db_acc_obj.exc_query(db_name='signals', query=qu)
 
 
+def sendDataInChunks(dfToSendToRDS):
+    """
+    Sending the data by chunks otherwise EC2 --> RDS conn. stops for obscure reasons.
+    Sleep seems also necessary. 5 secs seems ok.
+    """
+
+    lenDF = len(finalDF)
+    nChunks = round(lenDF/50000)
+
+    initChunk = True
+    for i in list(range(nChunks)):
+
+        if initChunk==True:
+            chunk = finalDF[0:50000]
+            initChunk = False
+            currentChunk = 50000
+            print("Sending chunk n°:", i)
+            print('sleep. . .')
+            dfToRDS(df=chunk,table='Signals_details',db_name='signals')
+            time.sleep(5)
+            print('Next chunk')
+        else:
+            nextChunk = currentChunk + 50000
+            chunk = finalDF[currentChunk:nextChunk]
+            currentChunk = nextChunk
+            print("Sending chunk n°:", i)
+            print('sleep. . .')
+            dfToRDS(df=chunk,table='Signals_details',db_name='signals')
+            time.sleep(5)
+            if i<nChunks:
+                print('Next chunk')
+    print("To RDS: Completed!")
 
 
 if __name__ == "__main__":
-
-
 
     db_acc_obj = std_db_acc_obj() 
     SEs = ["NYSE", "NASDAQ"]
@@ -214,13 +246,12 @@ if __name__ == "__main__":
     df = getSignaledStocks()
     tickers = df['ValidTick'].to_list()
     tickers.sort()
-    ###########################################
 
-    # 2. Get an actual DF containing financial info. for Signal detect.
+    # 2. Get an the dataframe containing the financial info. 
+    # to be processed for the Detailed Generation
     initStock = True
-    for se in SEs:
-        print(se)
-        initialDF = getData(se)
+    for stockExchange in SEs:
+        initialDF = getData(stockExchange)
         csvAppend(initialDF,'initialDF')
         
     initialDF = pd.read_csv('initialDF.csv')
@@ -229,8 +260,6 @@ if __name__ == "__main__":
     for tick in tickers:
         try:
             TrueRanges = []
-            print(tick)
-            # INITIIIIAL DF
             filteredDF = initialDF.loc[initialDF['Symbol']==f'{tick}']
             print("filteredDF: OK")
             df = SignalDetection(filteredDF, tick)
@@ -256,36 +285,8 @@ if __name__ == "__main__":
 
 
     deleteFromRDS()
+    sendDataInChunks(dfToSendToRDS=finalDF)
 
-    lenDF = len(finalDF)
-    nChunks = round(lenDF/50000)
-
-    initChunk = True
-    for i in list(range(nChunks)):
-        """
-        Sending the data by chunks otherwise EC2 --> RDS conn. stops for obscure reasons.
-        Sleep seems also necessary. 5 secs seems ok.
-        """
-        if initChunk==True:
-            chunk = finalDF[0:50000]
-            initChunk = False
-            currentChunk = 50000
-            print("Sending chunk n°:", i)
-            print('sleep. . .')
-            dfToRDS(df=chunk,table='Signals_details',db_name='signals')
-            time.sleep(5)
-            print('Next chunk')
-        else:
-            nextChunk = currentChunk + 50000
-            chunk = finalDF[currentChunk:nextChunk]
-            currentChunk = nextChunk
-            print("Sending chunk n°:", i)
-            print('sleep. . .')
-            dfToRDS(df=chunk,table='Signals_details',db_name='signals')
-            time.sleep(5)
-            if i<nChunks:
-                print('Next chunk')
-    print("To RDS: Completed!")
 
 
 
