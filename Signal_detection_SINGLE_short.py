@@ -1,3 +1,9 @@
+'''
+Exact same as "Signal_dtection_short.py".
+Main differences lies in the fact that it's not going to scan the whole US market,
+but only try detect short signals for one specific stock.
+:Output of this script: single.csv --> to be used in Graph_generation.py for visualizaiton.
+'''
 import pandas as pd
 
 import yfinance as yf
@@ -16,7 +22,7 @@ from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
-tick = 'HXL'
+tick = 'FSD'
 
 # PARAMETERS
 Aroonval = 40
