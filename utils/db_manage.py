@@ -212,9 +212,13 @@ def createTable(dbname='marketdataSQL.db'):
     conn.close()
 
 
-def dfToSql():
+def dfToSqlite(df, tableName, path='utils/marketdataSQL.db'):
     """
     Df to sqlite3 local DB
+
+    :param 1: dataframe to send to sqlite DB
+    :param 2: target table name in sqlite
+    :param 3: path to salite db
     """
     conn = sqlite3.connect('utils/marketdataSQL.db')
     c = conn.cursor()

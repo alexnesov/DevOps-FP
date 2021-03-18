@@ -1,5 +1,4 @@
 import pandas as pd
-
 import yfinance as yf
 from talib import MA_Type
 import talib
@@ -194,7 +193,7 @@ def main():
                 print(f"error for {tick}")
 
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
-        tocsvDF.to_csv(f'utils/batch_{today}.csv')
+        tocsvDF.to_csv(f'utils/batch_short_{today}.csv')
 
     # csvToRDS()
 
