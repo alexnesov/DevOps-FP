@@ -1,3 +1,12 @@
+'''
+This script uses "single.csv" that is located in the same folder
+It goes in "single.csv" and then extracts only the rows for the stock
+specified in the "TICK" param in the beginning of this 'Graph_generation' script.
+
+It doesn't care whether the initial data comes from signal detection short or long.
+It's simply drawing the position points relatively to the 1 or 0 in the double signal column.
+'''
+
 import pandas as pd
 import yfinance as yf
 from talib import MA_Type
@@ -16,8 +25,7 @@ db_acc_obj = std_db_acc_obj()
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
-# BIEN VERIFIER QUE PARAMS ICI == PARAMIS ORIGINAUX
-tick='HXL'
+TICK='FSD'
 
 
 
@@ -63,7 +71,7 @@ def plottingPlotly(df):
 
     fig.update_traces(line_width=1.5)
     fig.update_layout(
-    title=f'Trend Reversal Detection ({tick})',
+    title=f'Trend Reversal Detection ({TICK})',
     width=1400,
     height=600,
     plot_bgcolor='rgba(0,0,0,0)',
