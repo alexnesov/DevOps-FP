@@ -12,8 +12,6 @@ indices = ["NASDAQ", "NYSE"]
 today = datetime.today() - timedelta(1)
 today = str(today.strftime('%Y%m%d'))
 
-print(today)
-
 
 def keymap_replace(
     string: str, 
@@ -157,7 +155,7 @@ if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
     
     # Get last Date
-    quToday = "SELECT * FROM US_TODAY ORDER BY Date DESC LIMIT 1;"
+    quToday = "SELECT * FROM marketdata.NASDAQ_20 ORDER BY Date DESC LIMIT 1;"
     df = db_acc_obj.exc_query(db_name='marketdata', query=quToday, \
         retres=QuRetType.ALLASPD)
 
@@ -165,12 +163,17 @@ if __name__ == "__main__":
     stock_exchange = ['NASDAQ_15','NYSE_15']
     for ex in stock_exchange:
         arr = os.listdir(f'downloads/{ex}') 
-        
+
+        # after a bug created by a bank holiday. I decided to no use "today"
+        # to identify the last business day, but rather, simply the last csv
+        arr.sort()
+        arr = [ a for a in arr if '.csv' in a]
+        lastBD = arr[-1] #BD = business day
+
         if ex=="NASDAQ_15":
-            new_arr = [ x for x in arr if f"NASDAQ_{today}" in x]
+            new_arr = [ x for x in arr if f"{lastBD}" in x]
         elif ex=="NYSE_15":
-            new_arr = [ x for x in arr if f"NYSE_{today}" in x]
+            new_arr = [ x for x in arr if f"{lastBD}" in x]
         
         new_arr.sort()
-        print(new_arr[0])
         dailyBatchUpload(new_arr[0])
