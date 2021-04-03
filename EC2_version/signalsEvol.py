@@ -10,6 +10,19 @@ yesterday = str(yesterday.strftime('%Y-%m-%d'))
 # CREATE TABLE signals.Signals_aroon_crossing (ValidTick VARCHAR(10), SignalDate DATE, ScanDate DATE, NScanDaysInterval INT, PriceAtSignal DECIMAL(5,2), LastClosingPrice DECIMAL(5,2), PriceEvolution DECIMAL(5,2));
 
 
+def getLastBD():
+    """
+    :returns: string, being the last business day in marketdata.US_TODAY
+    """
+
+    quLastBD = "SELECT * FROM marketdata.US_TODAY ORDER BY Date DESC LIMIT 1;"
+    df = db_acc_obj.exc_query(db_name='marketdata', query=quLastBD, \
+        retres=QuRetType.ALLASPD)
+    lastBD = df['Date'][0].strftime("%Y-%m-%d")
+
+    return lastBD
+
+
 def signalsPricesEvol():
     """
     This func not only pulls data but also acts like a data mgmt tool
@@ -17,7 +30,10 @@ def signalsPricesEvol():
     1. Pulls signals  from RDS
     2. calculates price evolution
     """
-    squDelPrevDaysInUSTODAY = f"DELETE FROM marketdata.US_TODAY WHERE Date <'{yesterday}'"
+
+
+    lastBD = getLastBD()
+    squDelPrevDaysInUSTODAY = f"DELETE FROM marketdata.US_TODAY WHERE Date <'{lastBD}'"
 
     try:
         squDelPreviousTableEvol = "DELETE FROM signals.Signals_aroon_crossing_evol"
