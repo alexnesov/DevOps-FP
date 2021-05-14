@@ -10,7 +10,6 @@ from time import gmtime, strftime
 from csv import writer
 import os
 from utils.db_manage import QuRetType, dfToRDS, std_db_acc_obj
-import traceback
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
@@ -31,8 +30,6 @@ end_date = f'{today}'
 
 # file that is going to contain valid symbols
 file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
-notvalid = []
-error = []
 init = True
 
 # Initilazing dictionnary
@@ -171,7 +168,7 @@ def main():
         for tick in tickers:
             if '-' in tick:
                 continue
-            
+
             remainingNStock -= 1
             if remainingNStock==batch500:
                 print(f'{remainingNStock} stocks remaining.')
@@ -183,7 +180,7 @@ def main():
                 df = SignalDetection(dfTick,tick)
                 lastSignalsDetection(df, tick, start_date, end_date)
             except:
-                print(f"Error for {tick}")
+                pass
 
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
