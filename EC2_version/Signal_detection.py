@@ -1,5 +1,4 @@
 import pandas as pd
-
 import yfinance as yf
 from talib import MA_Type
 import talib
@@ -24,17 +23,17 @@ long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
 NScanDaysInterval = 2
-NDaysValidationPeriod = 40
+NDaysValidationPeriod = 90
 ValidPeriodStart = (datetime.today() - timedelta(days=NDaysValidationPeriod)).strftime('%Y-%m-%d')
 start_date = datetime.today() - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
 
-
 currentDirectory = os.getcwd() # Ubuntu
-
 # file that is going to contain valid symbols
 file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
 
+
+testlist = []
 
 notvalid = []
 error = []
@@ -46,9 +45,6 @@ keys = ['ValidTick','SignalDate','ScanDate','NScanDaysInterval','PriceAtSignal']
 validSymbols = {}
 for k in keys:
     validSymbols[k] = []
-
-
-
 
 
 def SignalDetection(df, tick, *args):
@@ -98,12 +94,9 @@ def SignalDetection(df, tick, *args):
         (df["Aroon Up"] > df["Aroon Down"]) & (df['positions']==1) & (df["Aroon Down"]<75) &(df["Aroon Up"]>55),
         1,0)
 
-    df['symbol'] = tick
-
     #csvAppend(df)
 
     return df
-
 
 
 
@@ -126,10 +119,8 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     # Append the selected symbols to empty initialized list "validsymbol"
     if True in true_false:
         lastSignalDF = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
-
         lastSignalDate = lastSignalDF.loc[-1:,'Date']
         lastSignalPrice = list(lastSignalDF.loc[-1:,'Close'])[0]
-
         string_lastSignalDate = list(lastSignalDF.loc[-1:,'Date'])[0].strftime("%Y-%m-%d") 
         
         validSymbols['ValidTick'].append(tick) 
@@ -139,8 +130,8 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
         validSymbols['PriceAtSignal'].append(lastSignalPrice)
         
         print(f'Ok for {tick}')
+        testlist.append(tick)
     else:
-        print(f'No signal for this time frame for {tick}')
         notvalid.append(tick)
 
     print(f"Number not valid: {len(notvalid)}")
@@ -162,13 +153,11 @@ def csvAppend(df):
 
 
 
-
 def sqliteToDF(table,dbanme='marketdataSQL.db'):
     conn = sqlite3.connect(f'utils/{dbanme}')
     qu = f"SELECT * FROM {table}"
     df = pd.read_sql(qu, conn)
     return df
-
 
 
 quCopy = "CREATE TABLE Signals_aroon_crossing_copy AS (\
@@ -186,7 +175,6 @@ def csvToRDS():
     df = pd.read_csv(f'utils/batch_{today}.csv')
     # dataFrame.iloc[<ROWS INDEX RANGE> , <COLUMNS INDEX RANGE>]
     df = df.iloc[:,1::]
-
 
     dfToRDS(df=df,table='Signals_aroon_crossing',db_name='signals')
     db_acc_obj.exc_query(db_name='signals', query=quCopy)
