@@ -37,3 +37,13 @@ Sending the data directly from MySQL Workbench to aws RDS was too slow, so I dec
 Tried this after "broken pipe" error message:</br>
 <code>aws configure set default.s3.max_concurrent_requests 20</code></br>
 <code>sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1</code>
+
+</br>
+<b>Memo of useful commands for DevOps:</b></br>
+<code>tail -f &ltpath&gt</code></br>
+<code>sudo su - jenkins</code></br>
+<code>ps -aux | grep jenkins</code></br>
+<code>dps aux | sort -nrk 3,3 | head -n 5</code></br>
+<code>curl -v &ltwebsite&gt</code></br>
+<code>python3 -m pip install --user virtualenv</code></br>
+<code>virtualenv test-venv</code>
