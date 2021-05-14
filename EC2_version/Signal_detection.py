@@ -1,4 +1,6 @@
+
 import pandas as pd
+pd.options.mode.chained_assignment = None 
 import yfinance as yf
 from talib import MA_Type
 import talib
@@ -7,38 +9,31 @@ from datetime import datetime, timedelta
 from time import gmtime, strftime
 from csv import writer
 import os
-import sqlite3
-
-from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
-pd.options.mode.chained_assignment = None 
+from utils.db_manage import QuRetType, dfToRDS, std_db_acc_obj
+import traceback
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
+currentDirectory = os.getcwd() # Ubuntu
 
 # PARAMETERS
 Aroonval = 40
 short_window =10
 long_window = 50
-
-# start_date and end_date are used to set the time interval that in which a signal is going to be searched
-NScanDaysInterval = 2
 NDaysValidationPeriod = 90
 ValidPeriodStart = (datetime.today() - timedelta(days=NDaysValidationPeriod)).strftime('%Y-%m-%d')
+# start_date and end_date are used to set the time interval that in which a signal is going to be searched
+NScanDaysInterval = 2
 start_date = datetime.today() - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
 
-currentDirectory = os.getcwd() # Ubuntu
+
 # file that is going to contain valid symbols
 file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
-
-
-testlist = []
-
 notvalid = []
 error = []
 init = True
-
 
 # Initilazing dictionnary
 keys = ['ValidTick','SignalDate','ScanDate','NScanDaysInterval','PriceAtSignal']
@@ -52,7 +47,6 @@ def SignalDetection(df, tick, *args):
     This function downloads prices for desired quotes (those in the parameter)
     and then tries to catch signals for selected timeframe.
     Stocks for which we catched a signal are stored in variable "validsymbol"
-
     :param p1: dataframe of eod data
     :param p2: ticker
     :returns: df with signals
@@ -93,18 +87,14 @@ def SignalDetection(df, tick, *args):
     df['doubleSignal'] = np.where(
         (df["Aroon Up"] > df["Aroon Down"]) & (df['positions']==1) & (df["Aroon Down"]<75) &(df["Aroon Up"]>55),
         1,0)
-
-    #csvAppend(df)
+    df['symbol'] = tick
 
     return df
 
 
-
 def lastSignalsDetection(signals_df, tick, start_date, end_date):
     """
-
     param: df (one tick) with all signals already detected
-
     Checking if signal is present in the last x days (start_date & end_date)
     Func doesn't return anything, it appends selected stock for given time interval in empty list
     (list = validsymbol)
@@ -119,7 +109,6 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     # Append the selected symbols to empty initialized list "validsymbol"
     if True in true_false:
         lastSignalDF = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
-        lastSignalDate = lastSignalDF.loc[-1:,'Date']
         lastSignalPrice = list(lastSignalDF.loc[-1:,'Close'])[0]
         string_lastSignalDate = list(lastSignalDF.loc[-1:,'Date'])[0].strftime("%Y-%m-%d") 
         
@@ -129,41 +118,17 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
         validSymbols['NScanDaysInterval'].append(NScanDaysInterval)
         validSymbols['PriceAtSignal'].append(lastSignalPrice)
         
-        print(f'Ok for {tick}')
-        testlist.append(tick)
+        print(f'Signal detected for {tick}.')
     else:
-        notvalid.append(tick)
-
-    print(f"Number not valid: {len(notvalid)}")
+        pass
 
     # re-initilization
     true_false = False
-
-def csvAppend(df):
-    """
-    appends df corresponding to each stock to a final csv, that is then going to be send to RDS
-    """
-    global init
-
-    if init == True:
-        df.to_csv('marketdata.csv', index=False)
-        init = False
-    else:
-        df.to_csv('marketdata.csv', mode='a', index=False, header=False)
-
-
-
-def sqliteToDF(table,dbanme='marketdataSQL.db'):
-    conn = sqlite3.connect(f'utils/{dbanme}')
-    qu = f"SELECT * FROM {table}"
-    df = pd.read_sql(qu, conn)
-    return df
 
 
 quCopy = "CREATE TABLE Signals_aroon_crossing_copy AS (\
     SELECT DISTINCT ValidTick, SignalDate, ScanDate, NScanDaysInterval, PriceAtSignal \
     FROM signals.Signals_aroon_crossing)"
-
 
 quDeletePreviousTable = "DROP TABLE signals.Signals_aroon_crossing"
 
@@ -183,28 +148,47 @@ def csvToRDS():
 
 
 def main():
+    import sys
     stockexchanges = ['NASDAQ','NYSE']
-    
+
+    remainingNStock = 0
+    for SE in stockexchanges:
+        lenSE = len(pd.read_csv(f'utils/{SE}_list.csv'))
+        remainingNStock += lenSE
+    batch500 = remainingNStock - 500
+
+
     for SE in stockexchanges:
         dftickers = pd.read_csv(f'utils/{SE}_list.csv')
         tickers = dftickers[dftickers.columns[0]].tolist()
-        # initialDF = sqliteToDF(table=f'{SE}_2020_10_01')
         qu = f"SELECT * FROM {SE}_15 WHERE DATE > '{ValidPeriodStart}'"
+        print(f'Querying data for : {SE}. . .')
+
         initialDF = db_acc_obj.exc_query(db_name='marketdata', query=qu, \
         retres=QuRetType.ALLASPD)
+        print('Starting TA. . .')
 
         for tick in tickers:
+            if '-' in tick:
+                continue
+            
+            remainingNStock -= 1
+            if remainingNStock==batch500:
+                print(f'{remainingNStock} stocks remaining.')
+                batch500 = remainingNStock - 500
             try:
                 dfTick = initialDF.loc[initialDF['Symbol']==f'{tick}']
-                print(tick)
+                if dfTick.empty:
+                    continue
                 df = SignalDetection(dfTick,tick)
                 lastSignalsDetection(df, tick, start_date, end_date)
             except:
-                print(f"error for {tick}")
+                print(f"Error for {tick}")
 
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
+    print('TA successfully accomplished.')
     #csvToRDS()
 
 
@@ -212,4 +196,3 @@ def main():
 if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
     main()
-    
