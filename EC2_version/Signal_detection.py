@@ -11,7 +11,7 @@ import os
 import sqlite3
 
 from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
-
+pd.options.mode.chained_assignment = None 
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
@@ -24,8 +24,11 @@ long_window = 50
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
 NScanDaysInterval = 2
+NDaysValidationPeriod = 40
+ValidPeriodStart = (datetime.today() - timedelta(days=NDaysValidationPeriod)).strftime('%Y-%m-%d')
 start_date = datetime.today() - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
+
 
 currentDirectory = os.getcwd() # Ubuntu
 
@@ -113,7 +116,6 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     Func doesn't return anything, it appends selected stock for given time interval in empty list
     (list = validsymbol)
     """
-    print(signals_df)
     DFfinalsignal = signals_df[['Date','Close','doubleSignal']]
     DFfinalsignal['Date'] = pd.to_datetime(DFfinalsignal['Date'], format='%Y-%m-%d')
     mask = (DFfinalsignal['Date'] > start_date) & (DFfinalsignal['Date'] <= end_date)
@@ -199,7 +201,7 @@ def main():
         dftickers = pd.read_csv(f'utils/{SE}_list.csv')
         tickers = dftickers[dftickers.columns[0]].tolist()
         # initialDF = sqliteToDF(table=f'{SE}_2020_10_01')
-        qu = f"SELECT * FROM {SE}_15 WHERE DATE > '2020-10-01'"
+        qu = f"SELECT * FROM {SE}_15 WHERE DATE > '{ValidPeriodStart}'"
         initialDF = db_acc_obj.exc_query(db_name='marketdata', query=qu, \
         retres=QuRetType.ALLASPD)
 
@@ -215,14 +217,7 @@ def main():
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
-    csvToRDS()
-
-
-
-        
-
-        
-
+    #csvToRDS()
 
 
 
