@@ -1,4 +1,3 @@
-
 import pandas as pd
 pd.options.mode.chained_assignment = None 
 import yfinance as yf
@@ -10,6 +9,9 @@ from time import gmtime, strftime
 from csv import writer
 import os
 from utils.db_manage import QuRetType, dfToRDS, std_db_acc_obj
+import sys
+sys.stdout.flush()
+
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
@@ -26,7 +28,6 @@ ValidPeriodStart = (datetime.today() - timedelta(days=NDaysValidationPeriod)).st
 NScanDaysInterval = 2
 start_date = datetime.today() - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
-
 
 # file that is going to contain valid symbols
 file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
@@ -102,7 +103,6 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
     DFfinalsignal = DFfinalsignal.loc[mask]
     true_false = list(DFfinalsignal['doubleSignal'].isin(["1"]))
 
-    # 9 17 18 19 20 21 27 28
     # Append the selected symbols to empty initialized list "validsymbol"
     if True in true_false:
         lastSignalDF = DFfinalsignal.loc[DFfinalsignal['doubleSignal']==1]
@@ -158,9 +158,9 @@ def main():
     for SE in stockexchanges:
         dftickers = pd.read_csv(f'utils/{SE}_list.csv')
         tickers = dftickers[dftickers.columns[0]].tolist()
+        
         qu = f"SELECT * FROM {SE}_15 WHERE DATE > '{ValidPeriodStart}'"
         print(f'Querying data for : {SE}. . .')
-
         initialDF = db_acc_obj.exc_query(db_name='marketdata', query=qu, \
         retres=QuRetType.ALLASPD)
         print('Starting TA. . .')
@@ -186,7 +186,9 @@ def main():
         tocsvDF.to_csv(f'utils/batch_{today}.csv')
 
     print('TA successfully accomplished.')
-    #csvToRDS()
+    print('Sending data to RDS. . .')
+    csvToRDS()
+    print('Completed.')
 
 
 

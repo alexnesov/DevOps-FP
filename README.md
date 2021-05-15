@@ -43,7 +43,7 @@ Tried this after "broken pipe" error message:</br>
 <code>tail -f &ltpath&gt</code></br>
 <code>sudo su - jenkins</code></br>
 <code>ps -aux | grep jenkins</code></br>
-<code>dps aux | sort -nrk 3,3 | head -n 5</code></br>
 <code>curl -v &ltwebsite&gt</code></br>
 <code>python3 -m pip install --user virtualenv</code></br>
-<code>virtualenv test-venv</code>
+<code>virtualenv test-venv</code></br>
+<code>source /var/lib/jenkins/virtualenvs/test-env/bin/activate</code>

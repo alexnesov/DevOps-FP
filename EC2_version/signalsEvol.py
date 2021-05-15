@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from utils.db_manage import QuRetType, std_db_acc_obj, dfToRDS
 from datetime import datetime, timedelta 
+pd.options.mode.chained_assignment = None 
 
 
 today = str(datetime.today().strftime('%Y-%m-%d'))
@@ -80,7 +81,9 @@ def signalsPricesEvol():
 
 if __name__ == '__main__':
     db_acc_obj = std_db_acc_obj() 
+    print('Calculting price evolutions. . .')
     items = signalsPricesEvol()
+    print('Sending data to RDS. . .')
     dfToRDS(df=items, table='Signals_aroon_crossing_evol', db_name='signals', location='RDS')
     
     

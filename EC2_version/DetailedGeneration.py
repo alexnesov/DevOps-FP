@@ -1,5 +1,3 @@
-
-
 import pandas as pd
 import yfinance as yf
 from talib import MA_Type
@@ -10,6 +8,9 @@ from time import gmtime, strftime
 from csv import writer
 import os
 import time 
+pd.options.mode.chained_assignment = None 
+import sys
+sys.stdout.flush()
 
 from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
 
@@ -219,8 +220,7 @@ def sendDataInChunks(dfToSendToRDS):
             chunk = finalDF[0:50000]
             initChunk = False
             currentChunk = 50000
-            print("Sending chunk n°:", i)
-            print('sleep. . .')
+            print("Sending chunk n°", i)
             dfToRDS(df=chunk,table='Signals_details',db_name='signals')
             time.sleep(5)
             print('Next chunk')
@@ -228,8 +228,7 @@ def sendDataInChunks(dfToSendToRDS):
             nextChunk = currentChunk + 50000
             chunk = finalDF[currentChunk:nextChunk]
             currentChunk = nextChunk
-            print("Sending chunk n°:", i)
-            print('sleep. . .')
+            print("Sending chunk n°", i)
             dfToRDS(df=chunk,table='Signals_details',db_name='signals')
             time.sleep(5)
             if i<nChunks:
@@ -245,7 +244,11 @@ if __name__ == "__main__":
     # 1. Get a List of signaled tickers for loop
     df = getSignaledStocks()
     tickers = df['ValidTick'].to_list()
+
+    RemainingTickers = len(tickers) 
+    print(f'{RemainingTickers} to analyze.')
     tickers.sort()
+    
 
     # 2. Get an the dataframe containing the financial info. 
     # to be processed for the Detailed Generation
@@ -253,29 +256,25 @@ if __name__ == "__main__":
     for stockExchange in SEs:
         initialDF = getData(stockExchange)
         csvAppend(initialDF,'initialDF')
-        
+    
     initialDF = pd.read_csv('initialDF.csv')
 
     init = True
     for tick in tickers:
+        RemainingTickers -= 1
+        if RemainingTickers%500==0:
+            print(f'{RemainingTickers} remaining tickers to analyze.')
         try:
             TrueRanges = []
             filteredDF = initialDF.loc[initialDF['Symbol']==f'{tick}']
-            print("filteredDF: OK")
             df = SignalDetection(filteredDF, tick)
-
-            print("SignalDetection: OK")
-
             #### TRUE RANGES ####
             df = makeTRArrays(df)
             ATR = ExpMovingAverage(TrueRanges,7)
             df['ATR'] = ATR
             #### TRUE RANGES ####
-
             # 3. Appending each new report for each tick to detailedSignals.csv
             csvAppend(df,'detailedSignals')
-            print('-----------APPENDF DF------------')
-
         except:
             print(f"Error for {tick}")
 
@@ -283,9 +282,9 @@ if __name__ == "__main__":
     finalDF = cleanTable(finalDF)
     finalDF = finalDF.drop(columns=['symbol'])
 
-
     deleteFromRDS()
     sendDataInChunks(dfToSendToRDS=finalDF)
+
 
 
 
