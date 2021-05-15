@@ -39,7 +39,7 @@ Tried this after "broken pipe" error message:</br>
 <code>sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1</code>
 
 </br>
-<b>Memo of useful commands for DevOps:</b></br>
+<b>Memo of useful commands for DevOps on Ubuntu with Jenkins:</b></br>
 <code>tail -f &ltpath&gt</code></br>
 <code>sudo su - jenkins</code></br>
 <code>ps -aux | grep jenkins</code></br>
