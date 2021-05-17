@@ -5,8 +5,11 @@ from datetime import datetime, timedelta
 pd.options.mode.chained_assignment = None 
 
 
-today = str(datetime.today().strftime('%Y-%m-%d'))
-yesterday = datetime.today() - timedelta(days=1)
+#today = str(datetime.today().strftime('%Y-%m-%d'))
+today = datetime.today()
+today_str = today.strftime('%Y-%m-%d')
+
+yesterday = today - timedelta(days=1)
 yesterday = str(yesterday.strftime('%Y-%m-%d'))
 # CREATE TABLE signals.Signals_aroon_crossing (ValidTick VARCHAR(10), SignalDate DATE, ScanDate DATE, NScanDaysInterval INT, PriceAtSignal DECIMAL(5,2), LastClosingPrice DECIMAL(5,2), PriceEvolution DECIMAL(5,2));
 
@@ -35,16 +38,8 @@ def signalsPricesEvol():
 
     lastBD = getLastBD()
     squDelPrevDaysInUSTODAY = f"DELETE FROM marketdata.US_TODAY WHERE Date <'{lastBD}'"
-
-    try:
-        squDelPreviousTableEvol = "DELETE FROM signals.Signals_aroon_crossing_evol"
-    except OperationalError:
-        pass
-
-    try:
-        squDelPreviousTableClose = "DELETE FROM signals.Signals_aroon_crossing_close"
-    except OperationalError:
-        pass
+    squDelPreviousTableEvol = "DELETE FROM signals.Signals_aroon_crossing_evol"
+    squDelPreviousTableClose = "DELETE FROM signals.Signals_aroon_crossing_close"
 
 
     quCreate = "INSERT INTO signals.Signals_aroon_crossing_close\

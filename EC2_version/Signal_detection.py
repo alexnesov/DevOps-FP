@@ -13,7 +13,9 @@ import sys
 sys.stdout.flush()
 
 
-today = str(datetime.today().strftime('%Y-%m-%d'))
+#today = str(datetime.today().strftime('%Y-%m-%d'))
+today = datetime.today()
+today_str = today.strftime('%Y-%m-%d')
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 currentDirectory = os.getcwd() # Ubuntu
@@ -23,14 +25,14 @@ Aroonval = 40
 short_window =10
 long_window = 50
 NDaysValidationPeriod = 90
-ValidPeriodStart = (datetime.today() - timedelta(days=NDaysValidationPeriod)).strftime('%Y-%m-%d')
+ValidPeriodStart = (today - timedelta(days=NDaysValidationPeriod)).strftime('%Y-%m-%d')
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
 NScanDaysInterval = 2
-start_date = datetime.today() - timedelta(days=NScanDaysInterval)
+start_date = today - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
 
 # file that is going to contain valid symbols
-file_name = (f'{currentDirectory}/validsymbol_{today}.csv') # Ubuntu
+file_name = (f'{currentDirectory}/validsymbol_{today_str}.csv') # Ubuntu
 init = True
 
 # Initilazing dictionnary
@@ -111,7 +113,7 @@ def lastSignalsDetection(signals_df, tick, start_date, end_date):
         
         validSymbols['ValidTick'].append(tick) 
         validSymbols['SignalDate'].append(string_lastSignalDate)
-        validSymbols['ScanDate'].append(today)
+        validSymbols['ScanDate'].append(today_str)
         validSymbols['NScanDaysInterval'].append(NScanDaysInterval)
         validSymbols['PriceAtSignal'].append(lastSignalPrice)
         
@@ -134,7 +136,7 @@ quRenameTable = "ALTER TABLE signals.Signals_aroon_crossing_copy\
 
 
 def csvToRDS():
-    df = pd.read_csv(f'utils/batch_{today}.csv')
+    df = pd.read_csv(f'utils/batch_{today_str}.csv')
     # dataFrame.iloc[<ROWS INDEX RANGE> , <COLUMNS INDEX RANGE>]
     df = df.iloc[:,1::]
 
@@ -183,7 +185,7 @@ def main():
                 pass
 
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
-        tocsvDF.to_csv(f'utils/batch_{today}.csv')
+        tocsvDF.to_csv(f'utils/batch_{today_str}.csv')
 
     print('TA successfully accomplished.')
     print('Sending data to RDS. . .')

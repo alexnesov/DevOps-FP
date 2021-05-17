@@ -4,35 +4,30 @@ from talib import MA_Type
 import talib
 import numpy as np
 from datetime import datetime, timedelta 
-from time import gmtime, strftime
-from csv import writer
-import os
+from time import strftime
 import time 
-pd.options.mode.chained_assignment = None 
 import sys
+from utils.db_manage import QuRetType, dfToRDS, std_db_acc_obj
+
 sys.stdout.flush()
+pd.options.mode.chained_assignment = None 
 
-from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
+#today = str(datetime.today().strftime('%Y-%m-%d'))
+today = datetime.today()
+today_str = today.strftime('%Y-%m-%d')
 
-today = str(datetime.today().strftime('%Y-%m-%d'))
 now = strftime("%H:%M:%S")
 now = now.replace(":","-")
 
 # PARAMETERS
-list_beg = 1
-list_end = 50
 Aroonval = 40
 short_window =10
 long_window = 50
+timePeriodRSI = 14
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-start_date = datetime.today() - timedelta(days=20)
+start_date = today - timedelta(days=20)
 end_date = f'{today}'
-
-notvalid = []
-error = []
-init = True
-
 
 # Initilazing dictionnary
 keys = ['ValidTick','SignalDate','ScanDate']
@@ -40,61 +35,6 @@ validSymbols = {}
 for k in keys:
     validSymbols[k] = []
 
-
-
-def TR(d,c,h,l,o,yc):
-    '''
-    :param d: day
-    :param c: close
-    :param h: high
-    :param l: low
-    :param o: open
-    :param yc: yesterday's close
-    '''
-    x = h-l
-    y = abs(h-yc)
-    z = abs(l-yc)
-
-    if y <= x > z:
-        TR = x
-    elif x <= y >=z:
-        TR = y
-    elif x <= z >=y:
-        TR = z
-
-    return d, TR
-
-def makeTRArrays(df):
-    x = 1
-    TRDates = []
-
-    while x < len(df.Date):
-                            # TR(d,c,h,l,o,yc):
-        TRDate, TrueRange = TR(df.Date[x],df.Close[x],df.High[x],df.Low[x],
-        df.Open[x],df.Close[x-1])
-        TRDates.append(TRDate)
-        TrueRanges.append(TrueRange)
-        x+=1
-
-    #Inserting a NaN at begining, otherwise arrays is not same length as Df and 
-    # it would return an error
-    TrueRanges.insert(0, np.nan)
-
-
-    # issue with 0 when using log scale. Turnaround is to replace 0's by 0.0001 for example.
-    #a = np.array(TrueRanges)
-    #a = np.where(a==0,0.001,a)
-    df['TR'] = TrueRanges
-
-    return df
-
-
-def ExpMovingAverage(values, window):
-    weights = np.exp(np.linspace(-1., 0., window))
-    weights /= weights.sum()
-    a = np.convolve(values, weights,mode='full')[:len(values)]
-    a[:window] = a[window]
-    return a
 
 
 
@@ -116,9 +56,9 @@ def SignalDetection(df, tick, *args):
     # Aroon
     aroonDOWN, aroonUP = talib.AROON(high=high, low=low,timeperiod=Aroonval)  ####
     # RSI
-    real = talib.RSI(close, timeperiod=14)
+    ind_rsi = talib.RSI(close, timeperiod=timePeriodRSI)
 
-    df['RSI'] = real
+    df['RSI'] = ind_rsi
     df['Aroon Down'] = aroonDOWN
     df['Aroon Up'] = aroonUP
     df['signal'] = pd.Series(np.zeros(len(df)))
@@ -143,8 +83,6 @@ def SignalDetection(df, tick, *args):
     df['doubleSignal'] = np.where(
         (df["Aroon Up"] > df["Aroon Down"]) & (df['positions']==1) & (df["Aroon Down"]<75) &(df["Aroon Up"]>55),
         1,0)
-
-    df['symbol'] = tick
 
     return df
 
@@ -204,7 +142,7 @@ def deleteFromRDS():
     db_acc_obj.exc_query(db_name='signals', query=qu)
 
 
-def sendDataInChunks(dfToSendToRDS):
+def sendDataInChunks(finalDF):
     """
     Sending the data by chunks otherwise EC2 --> RDS conn. stops for obscure reasons.
     Sleep seems also necessary. 5 secs seems ok.
@@ -213,51 +151,76 @@ def sendDataInChunks(dfToSendToRDS):
     lenDF = len(finalDF)
     nChunks = round(lenDF/50000)
 
-    initChunk = True
-    for i in list(range(nChunks)):
 
-        if initChunk==True:
-            chunk = finalDF[0:50000]
-            initChunk = False
-            currentChunk = 50000
-            print("Sending chunk n°", i)
-            dfToRDS(df=chunk,table='Signals_details',db_name='signals')
-            time.sleep(5)
-            print('Next chunk')
-        else:
-            nextChunk = currentChunk + 50000
-            chunk = finalDF[currentChunk:nextChunk]
-            currentChunk = nextChunk
-            print("Sending chunk n°", i)
-            dfToRDS(df=chunk,table='Signals_details',db_name='signals')
-            time.sleep(5)
-            if i<nChunks:
+    initChunk = True
+    if nChunks>0:
+        for i in list(range(nChunks)):
+
+            if initChunk==True:
+                chunk = finalDF[0:50000]
+                initChunk = False
+                currentChunk = 50000
+                print("Sending chunk n°", i)
+                dfToRDS(df=chunk,table='Signals_details',db_name='signals')
+                time.sleep(5)
                 print('Next chunk')
+            else:
+                nextChunk = currentChunk + 50000
+                chunk = finalDF[currentChunk:nextChunk]
+                currentChunk = nextChunk
+                print("Sending chunk n°", i)
+                dfToRDS(df=chunk,table='Signals_details',db_name='signals')
+                time.sleep(5)
+                if i<nChunks:
+                    print('Next chunk')
+    else:
+        dfToRDS(df=finalDF, table='Signals_details',db_name='signals')
+
     print("To RDS: Completed!")
 
 
-if __name__ == "__main__":
 
+def getsp500(DateSP='2020-01-01'):
+    qu=f"SELECT Date, Close FROM marketdata.sp500 where Date>='{DateSP}'"
+    sp500df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
+        retres=QuRetType.ALLASPD)
+    sp500df.Date = pd.to_datetime(sp500df.Date)
+    sp500df = sp500df.rename(columns={'Close':'Close_sp'})
+
+    return sp500df
+    
+
+
+
+if __name__ == "__main__":
     db_acc_obj = std_db_acc_obj() 
     SEs = ["NYSE", "NASDAQ"]
-
-    # 1. Get a List of signaled tickers for loop
+    # 1. Get a List of signaled tickers to be used in for loop
     df = getSignaledStocks()
     tickers = df['ValidTick'].to_list()
-
-    RemainingTickers = len(tickers) 
-    print(f'{RemainingTickers} to analyze.')
     tickers.sort()
-    
+
+    ### COUNTING - START
+    RemainingTickers = len(tickers) 
+    print(f'{RemainingTickers} stocks to analyze.')
+    ### COUNTING - END
 
     # 2. Get an the dataframe containing the financial info. 
     # to be processed for the Detailed Generation
+    init = True             # init is for csvAppend()
     initStock = True
     for stockExchange in SEs:
+        print(f'Getting RDS stock market data for {stockExchange}')
         initialDF = getData(stockExchange)
         csvAppend(initialDF,'initialDF')
     
     initialDF = pd.read_csv('initialDF.csv')
+
+    #### SP500 data fetch + % evol 1D calculation"
+    print('Getting SP500 data from RDS. . .')
+    dfsp500 = getsp500() # YYYY-MM-DD
+    dfsp500['returnSP500_1D'] =  dfsp500.Close_sp.pct_change()[1:]
+    #### SP500 data fetch + % evol 1D calculation"
 
     init = True
     for tick in tickers:
@@ -265,26 +228,27 @@ if __name__ == "__main__":
         if RemainingTickers%500==0:
             print(f'{RemainingTickers} remaining tickers to analyze.')
         try:
-            TrueRanges = []
             filteredDF = initialDF.loc[initialDF['Symbol']==f'{tick}']
-            df = SignalDetection(filteredDF, tick)
-            #### TRUE RANGES ####
-            df = makeTRArrays(df)
-            ATR = ExpMovingAverage(TrueRanges,7)
-            df['ATR'] = ATR
-            #### TRUE RANGES ####
+            dfStock = SignalDetection(filteredDF, tick)
+            dfStock[f'return_1D'] = dfStock.Close.pct_change()[1:] # YYYY-MM-DD
+            dfStock.Date = pd.to_datetime(dfStock.Date)
+            dfStock = pd.merge(dfStock, dfsp500, on='Date',how='inner')
+            dfStock['diff_stock_bench'] = dfStock['return_1D'] - dfStock['returnSP500_1D']
+            dfStock[f'rolling_mean_{35}'] = dfStock['diff_stock_bench'].rolling(35).mean()
+            dfStock[f'rolling_mean_{10}'] = dfStock['diff_stock_bench'].rolling(10).mean()
+            dfStock[f'rolling_mean_{5}'] = dfStock['diff_stock_bench'].rolling(5).mean()
+
             # 3. Appending each new report for each tick to detailedSignals.csv
-            csvAppend(df,'detailedSignals')
+            csvAppend(dfStock,'detailedSignals')
         except:
             print(f"Error for {tick}")
 
+    
     finalDF = pd.read_csv('detailedSignals.csv')
     finalDF = cleanTable(finalDF)
-    finalDF = finalDF.drop(columns=['symbol'])
 
     deleteFromRDS()
-    sendDataInChunks(dfToSendToRDS=finalDF)
-
+    sendDataInChunks(finalDF)
 
 
 
