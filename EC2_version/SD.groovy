@@ -2,6 +2,26 @@
 pipeline {
     agent any
     stages {
+        stage('EOODATA') {
+            steps {
+                sh '''
+                    #!/bin/bash
+                    . /var/lib/jenkins/virtualenvs/test-env/bin/activate
+                    cd /home/ubuntu/eoddata
+                    . /home/ubuntu/.bashrc; python -u /home/ubuntu/eoddata/eoddata.py > /home/ubuntu/eoddata/downloads/logs/eod.log
+                '''
+        }
+    }
+        stage('eod transfer') {
+            steps {
+                sh '''
+                    #!/bin/bash
+                    . /var/lib/jenkins/virtualenvs/test-env/bin/activate
+                    cd /home/ubuntu/eoddata
+                    . /home/ubuntu/.bashrc; python -u /home/ubuntu/eoddata/eoddata.py >> /home/ubuntu/eoddata/downloads/logs/eod.log
+                '''
+        }
+    }
         stage('Signal_detection') {
             steps {
                 sh '''
