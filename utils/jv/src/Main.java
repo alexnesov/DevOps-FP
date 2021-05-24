@@ -10,24 +10,24 @@ public class Main {
         String db_user = System.getenv("aws_db_user");
         String db_url = System.getenv("aws_db_endpoint");
 
-        System.out.println(db_url);
+        String formattedURL = "jdbc:mysql://"+db_url;
+        System.out.println(formattedURL);
 
         Class.forName("com.mysql.cj.jdbc.Driver");
 
+        try
+            {
+                // 1. Get a connection to database
+                Connection connection  = DriverManager.getConnection(formattedURL, db_user, db_pass);
+                // 2. Create a statement
+                Statement stmt = connection.createStatement();
+                System.out.println("Connected!");
+                // 3. Execute SQL query
+                ResultSet rs = stmt.executeQuery("SELECT * FROM marketdata.sp500");
 
-        try {
-            // 1. Get a connection to database
-            Connection connection  = DriverManager.getConnection("jdbc:mysql://flaskfinance.ccxri6cskobf.eu-central-1.rds.amazonaws.com", db_user, db_pass);
-
-            // 2. Create a statement
-            Statement stmt = connection.createStatement();
-            System.out.println("Connected!");
-
-            // 3. Execute SQL query
-            ResultSet rs = stmt.executeQuery("SELECT * FROM marketdata.sp500");
-
-            // 4. Process the result set
-        } catch(Exception ex)
+                // 4. Process the result set
+            }
+        catch(Exception ex)
             {
                 System.out.println("Exception :" + ex.getMessage());
             }
