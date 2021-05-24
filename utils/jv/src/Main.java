@@ -14,22 +14,41 @@ public class Main {
         System.out.println(formattedURL);
 
         Class.forName("com.mysql.cj.jdbc.Driver");
+        Connection connection = null;
+        Statement stmt = null;
+        ResultSet rs = null;
 
         try
             {
                 // 1. Get a connection to database
-                Connection connection  = DriverManager.getConnection(formattedURL, db_user, db_pass);
+                connection  = DriverManager.getConnection(formattedURL, db_user, db_pass);
                 // 2. Create a statement
-                Statement stmt = connection.createStatement();
+                stmt = connection.createStatement();
                 System.out.println("Connected!");
                 // 3. Execute SQL query
-                ResultSet rs = stmt.executeQuery("SELECT * FROM marketdata.sp500");
+                rs = stmt.executeQuery("SELECT * FROM marketdata.sp500");
 
                 // 4. Process the result set
             }
         catch(Exception ex)
             {
                 System.out.println("Exception :" + ex.getMessage());
+            }
+        finally
+            {
+                if (rs != null)
+                    {
+                        rs.close();
+                    }
+                if (stmt != null)
+                    {
+                        stmt.close();
+                    }
+                if (connection != null)
+                    {
+                        connection.close();
+                        System.out.println("Connection Closed.");
+                    }
             }
     }
 }
