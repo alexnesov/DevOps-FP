@@ -1,7 +1,4 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -29,6 +26,16 @@ public class Main {
                 rs = stmt.executeQuery("SELECT * FROM marketdata.sp500");
 
                 // 4. Process the result set
+                ResultSetMetaData rsmd = rs.getMetaData();
+
+                // 4.a Get Number of cols, needed for .getColumnName() argument
+                int nbCols = rsmd.getColumnCount();
+
+                // 4b. Get the column names
+                for (int i = 1; i <= nbCols; i++)
+                    {
+                        System.out.println(rsmd.getColumnName(i));
+                    }
             }
         catch(Exception ex)
             {
