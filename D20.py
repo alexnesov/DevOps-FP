@@ -68,12 +68,12 @@ test['Date'] = test['Date'].astype(str)
 
 def getPrice(symbol, date):
     """
-    param symbol: str
-    param date: str
+    param symbol: str, the name of the ticker
+    param date: str, yyyy-mm-dd
     returns price: int
     """
-    a = test.loc[(test['Symbol']==symbol) & (test['Date']==date)]   
-    return a
+    price = float(test.loc[(test['Symbol']==symbol) & (test['Date']==date)]['Close']) 
+    return price
 
 
 getPrice('AAIC','2020-12-16')
