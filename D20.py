@@ -44,18 +44,34 @@ retres=QuRetType.ALL)
 # Creating a column that contains the dateof the signal +20days, for every stock
 dfSignals = dfitems
 dfSignals['D20'] = dfSignals['SignalDate'] + timedelta(days=20)
-print(dfSignals[['ValidTick','SignalDate','LastClosingPrice','D20']])
+
+dfSignals_reduced = dfSignals[['ValidTick','SignalDate','PriceAtSignal','D20']]
+
+# Filter for the signals that are > than 20 older
+
+
+d20back = datetime.date(today - timedelta(days=20))
+dfSignals_filtered = dfSignals_reduced.loc[dfSignals_reduced['SignalDate'] < d20back]
+
+# Getting rid of rows where the Symbol contains '.' or '-' (not stocks)
+symbols = ['\.','-']
+pattern = '|'.join(symbols)
+dfSignals_filtered = dfSignals_filtered[~dfSignals_filtered['ValidTick'].str.contains(pattern, case=False)]
+
+
+
 
 
 
 # Getting the price for every stock, at d+20
-tupNew = tuple(dfSignals['ValidTick'])
+tupNew = tuple(dfSignals_filtered['ValidTick'])
 QUpricesNASDAQ = f"select * from marketdata.NASDAQ_20 where Symbol IN {tupNew} and Date>'2020-12-15' \
     and Date<'{todayD20}'"
 QUpricesNYSE = f"select * from marketdata.NYSE_20 where Symbol IN {tupNew} and Date>'2020-12-15'\
     and Date<'{todayD20}'"
 
-NASDAQPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
+
+NASDAQPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNASDAQ, \
     retres=QuRetType.ALLASPD)
 
 
@@ -66,6 +82,29 @@ NYSEPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
 # Concatenate both dataframe to have one single consolidated
 allPrices = pd.concat([NASDAQPrices,NYSEPrices])
 allPrices['Date'] = allPrices['Date'].astype(str)
+allPrices = allPrices.drop_duplicates(subset=['Symbol', 'Date'], keep='last')
+
+
+
+
+# Technique to reduce the lookup time
+dfSignals_filtered['combination'] = dfSignals_filtered['D20'].apply(lambda x: x.strftime('%Y%m%d')) + dfSignals_filtered['ValidTick']
+allPrices['combination'] = pd.to_datetime(allPrices['Date'], format='%Y-%m-%d').apply(lambda x: x.strftime('%Y%m%d')) + allPrices['Symbol']
+
+
+
+
+selectedAtD20_allPrices = allPrices.loc[allPrices['combination'].isin(dfSignals_filtered['combination'])][['Close','combination']]
+
+
+
+# Here we have on the left the prices at signal and on the right, the prices at D+20
+result = pd.merge(dfSignals_filtered, selectedAtD20_allPrices, on=["combination"])
+
+
+
+
+
 
 
 
@@ -75,10 +114,27 @@ def getPrice(symbol, date):
     param date: str, yyyy-mm-dd
     returns price: int
     """
-    price = float(allPrices.loc[(allPrices['Symbol']==symbol) & (allPrices['Date']==date)]['Close']) 
+    price = selectedAtD20.loc[(selectedAtD20['Symbol']==symbol) & (selectedAtD20['Date']==date)]['Close']
+
     return price
 
 
-getPrice('AAIC','2020-12-16')
+
+getPrice('BIB','2021-06-07')
 
 
+
+
+
+for i, row in dfSignals.iterrows():
+    tick = row['ValidTick']
+    my_date = row['SignalDate']
+    print(i)
+    print(tick)
+    print(my_date)
+    break
+    p = getPrice(tick,my_date)
+    print(p)
+    break
+    
+    getPrice(tick,my_date)
