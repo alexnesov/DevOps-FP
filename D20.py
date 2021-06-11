@@ -100,10 +100,16 @@ selectedAtD20_allPrices = allPrices.loc[allPrices['combination'].isin(dfSignals_
 
 # Here we have on the left the prices at signal and on the right, the prices at D+20
 result = pd.merge(dfSignals_filtered, selectedAtD20_allPrices, on=["combination"])
+result['PriceAtSignal'] = result['PriceAtSignal'].astype(float)
+result['Evolution'] = (result['Close'] - result['PriceAtSignal'])/result['PriceAtSignal']
+
+mean_evol = result.Evolution.mean()
 
 
+n_periods = int(len(result.D20.unique())/20)
+comp_gains = (((1+mean_evol)**3)-1)*100
 
-
+print(f"Compounded gains over the {n_periods} periods are: {round(comp_gains,2)} %")
 
 
 
