@@ -1,3 +1,11 @@
+"""
+This script serves to find the Prices of a list of tickers, at a given date + x days from 
+their associated data.
+So, essentially, one dataframe and two columns (Date and ticker) are require here to calculate the rest.
+
+It is useful - among other things - to back-test some trading strategies
+"""
+
 from utils.db_manage import QuRetType, std_db_acc_obj
 import pandas as pd
 from datetime import datetime, timedelta 
@@ -76,7 +84,7 @@ class findPrices():
         consolidated datafram
 
         :param listDf: a list of dataframes
-        !returns: a single dataframe
+        :returns: a single dataframe
 
         Objective in this specific context:
         To merge Nasdaq and Nyse stock prices into ine single consolidated pandas dataframe
@@ -106,40 +114,40 @@ class findPrices():
 
 
         
-
-        
-
-
-
-if __name__ == "__main__":
-    db_acc_obj = std_db_acc_obj() 
+def main():
 
     sig = generateSignalsDF(20)
     sig.cleanDF()
     sig.generateForwardDate()
     sig.dfSignals_filtered
-
     FP = findPrices(sig.dfSignals_filtered, 'ValidTick')
-    FP.consPrice
-
     # Findin the prices for every tick, at D+x
     priceAtD20 = FP.consPrice.loc[FP.consPrice['UniqueID'].isin(sig.dfSignals_filtered['UniqueID'])][['Close','UniqueID']]
 
 
 
-# Here we have on the left the prices at signal and on the right, the prices at D+20
-result = pd.merge(sig.dfSignals_filtered, selectedAtD20_allPrices, on=["UniqueID"])
-result['PriceAtSignal'] = result['PriceAtSignal'].astype(float)
-result['Evolution'] = (result['Close'] - result['PriceAtSignal'])/result['PriceAtSignal']
+    # Here we have on the left the prices at signal and on the right, the prices at D+20
+    result = pd.merge(sig.dfSignals_filtered, selectedAtD20_allPrices, on=["UniqueID"])
+    result['PriceAtSignal'] = result['PriceAtSignal'].astype(float)
+    result['Evolution'] = (result['Close'] - result['PriceAtSignal'])/result['PriceAtSignal']
 
-mean_evol = result.Evolution.mean()
+    mean_evol = result.Evolution.mean()
 
-n_days = len(result.SignalDate.unique())
-# 1 period is the 20 days holding
-n_periods = n_days/20
-comp_gains = (((1+mean_evol)**3)-1)*100
+    n_days = len(result.SignalDate.unique())
+    # 1 period is the 20 days holding
+    n_periods = n_days/20
+    comp_gains = (((1+mean_evol)**3)-1)*100
 
-print(f"Compounded gains over the {n_periods} periods ({n_days} days) are: {round(comp_gains,2)} %")
+    print(f"Compounded gains over the {n_periods} periods ({n_days} days) are: {round(comp_gains,2)} %")
+
+
+
+if __name__ == "__main__":
+    db_acc_obj = std_db_acc_obj() 
+    main()
+
+
+
 
 
 
