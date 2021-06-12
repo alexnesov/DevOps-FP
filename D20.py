@@ -2,8 +2,6 @@ from utils.db_manage import QuRetType, std_db_acc_obj
 import pandas as pd
 from datetime import datetime, timedelta 
 today = datetime.today()
-todayD20 = (datetime.today() - timedelta(21)).strftime('%Y-%m-%d')
-db_acc_obj = std_db_acc_obj() 
 
 qu = "SELECT * FROM\
         (SELECT Signals_aroon_crossing_evol.*, sectors.Company, sectors.Sector, sectors.Industry  \
@@ -15,74 +13,108 @@ qu = "SELECT * FROM\
     ORDER BY SignalDate DESC;"
 
 
-items = db_acc_obj.exc_query(db_name='signals', query=qu, \
-    retres=QuRetType.ALL)
-
-# Calculate price evolutions and append to list of Lists 
-dfitems = pd.DataFrame(items)
-
-colNames = {0:"ValidTick",
-            1:"SignalDate",
-            2:"ScanDate",
-            3:"NSanDaysInterval",
-            4:"PriceAtSignal",
-            5:"LastClosingPrice",
-            6:"PriceEvolution",
-            7:"Company",
-            8:"Sector",
-            9:"Industry"}
-
-dfitems = dfitems.rename(columns=colNames)
-PriceEvolution = dfitems['PriceEvolution'].tolist()
-
-# Calculate nbSignals
-nSignalsDF = dfitems[['ValidTick','SignalDate']]
-items = db_acc_obj.exc_query(db_name='signals', query=qu, \
-retres=QuRetType.ALL)
 
 
-# Creating a column that contains the dateof the signal +20days, for every stock
-dfSignals = dfitems
-dfSignals['D20'] = dfSignals['SignalDate'] + timedelta(days=20)
 
-dfSignals_reduced = dfSignals[['ValidTick','SignalDate','PriceAtSignal','D20']]
+class generateSignalsDF:
 
-# Filter for the signals that are > than 20 older
+    def __init__(self, nDaysBack):
+        self.dfSignals = db_acc_obj.exc_query(db_name='signals', query=qu, \
+        retres=QuRetType.ALLASPD)
+        self.nDaysBack = nDaysBack
 
 
-d20back = datetime.date(today - timedelta(days=20))
-dfSignals_filtered = dfSignals_reduced.loc[dfSignals_reduced['SignalDate'] < d20back]
+    def cleanDF(self):
+        dfSignals_reduced = self.dfSignals[['ValidTick','SignalDate','PriceAtSignal']]
+        
+        # Getting rid of rows where the Symbol contains '.' or '-' (not stocks)
+        symbols = ['\.','-']
+        pattern = '|'.join(symbols)
+        self.dfSignals_filtered = dfSignals_reduced[~dfSignals_reduced['ValidTick'].str.contains(pattern, case=False)]
 
-# Getting rid of rows where the Symbol contains '.' or '-' (not stocks)
-symbols = ['\.','-']
-pattern = '|'.join(symbols)
-dfSignals_filtered = dfSignals_filtered[~dfSignals_filtered['ValidTick'].str.contains(pattern, case=False)]
+
+
+    def generateForwardDate(self):
+        # Creating a column that contains the date of the signal +20days, for every stock
+        self.dfSignals_filtered[f'D{self.nDaysBack}'] = self.dfSignals_filtered['SignalDate'] + timedelta(days=self.nDaysBack)
+
+        # Filter for the signals that are > than 20 days older
+        dateBack = datetime.date(today - timedelta(days=self.nDaysBack))
+        self.dfSignals_filtered = self.dfSignals_filtered.loc[self.dfSignals_filtered['SignalDate'] < dateBack]
 
 
 
 
+class findPrices():
+    """
+
+    """
 
 
-# Getting the price for every stock, at d+20
-tupNew = tuple(dfSignals_filtered['ValidTick'])
-QUpricesNASDAQ = f"select * from marketdata.NASDAQ_20 where Symbol IN {tupNew} and Date>'2020-12-15' \
-    and Date<'{todayD20}'"
-QUpricesNYSE = f"select * from marketdata.NYSE_20 where Symbol IN {tupNew} and Date>'2020-12-15'\
-    and Date<'{todayD20}'"
+    def __init__(self, signalsDf, tickersColName):
+        """
+        :param df:  ==> pandas dataframe
+        :param tickersColName: name of the columns that contains the tickers name to look for ==> String
+        """
+        self.signalsDf = signalsDf
+        self.tickersColName = tickersColName
+        self.ticks = tuple(self.signalsDf[f'{self.tickersColName}'])
+        self.allPrices = self.dlPrices()
+
+    @staticmethod
+    def consolidatePrices(listDF):
+        """
+        This function appends an unlimited number of data (that have the same width) to create on sngle 
+        consolidated datafram
+
+        :param listDf: a list of dataframes
+        !returns: a single dataframe
+
+        Objective in this specific context:
+        To merge Nasdaq and Nyse stock prices into ine single consolidated pandas dataframe
+
+        """
+
+        # Concatenate both dataframe to have one single consolidated
+        consPrices = pd.concat(listDF)
+
+        return consPrices
+
+    def dlPrices(self):
+        # Getting the price for every stock, at d+x
+        QUpricesNASDAQ = f"select * from marketdata.NASDAQ_20 where Symbol IN {self.ticks} and Date>'2020-12-15'"
+        QUpricesNYSE = f"select * from marketdata.NYSE_20 where Symbol IN {self.ticks} and Date>'2020-12-15'"
+            
+        self.NASDAQPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNASDAQ, \
+            retres=QuRetType.ALLASPD)
+        self.NYSEPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
+            retres=QuRetType.ALLASPD)
+
+        self.consolidatePrices()
+
+        
+
+d = {'col1': [1, 2], 'col2': [3, 4]}
+d = pd.DataFrame(data=d)
+d1 = {'col1': [3, 4], 'col2': [5, 6]}
+d1 = pd.DataFrame(data=d1)
+d2 = {'col1': [7, 8], 'col2': [9, 10]}
+d2 = pd.DataFrame(data=d2)
 
 
-NASDAQPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNASDAQ, \
-    retres=QuRetType.ALLASPD)
 
 
-NYSEPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
-    retres=QuRetType.ALLASPD)
+consolidate([d,d1,d2])
 
 
-# Concatenate both dataframe to have one single consolidated
-allPrices = pd.concat([NASDAQPrices,NYSEPrices])
-allPrices['Date'] = allPrices['Date'].astype(str)
-allPrices = allPrices.drop_duplicates(subset=['Symbol', 'Date'], keep='last')
+if __name__ == "__main__":
+    db_acc_obj = std_db_acc_obj() 
+
+    sig = generateSignalsDF(20)
+    sig.cleanDF()
+    sig.generateForwardDate()
+
+    FP = findPrices(sig.dfSignals_filtered, 'ValidTick')
 
 
 
@@ -105,11 +137,12 @@ result['Evolution'] = (result['Close'] - result['PriceAtSignal'])/result['PriceA
 
 mean_evol = result.Evolution.mean()
 
-
-n_periods = int(len(result.D20.unique())/20)
+n_days = len(result.SignalDate.unique())
+# 1 period is the 20 days holding
+n_periods = n_days/20
 comp_gains = (((1+mean_evol)**3)-1)*100
 
-print(f"Compounded gains over the {n_periods} periods are: {round(comp_gains,2)} %")
+print(f"Compounded gains over the {n_periods} periods ({n_days} days) are: {round(comp_gains,2)} %")
 
 
 
@@ -126,21 +159,6 @@ def getPrice(symbol, date):
 
 
 
-getPrice('BIB','2021-06-07')
+# getPrice('BIB','2021-06-07')
 
 
-
-
-
-for i, row in dfSignals.iterrows():
-    tick = row['ValidTick']
-    my_date = row['SignalDate']
-    print(i)
-    print(tick)
-    print(my_date)
-    break
-    p = getPrice(tick,my_date)
-    print(p)
-    break
-    
-    getPrice(tick,my_date)
