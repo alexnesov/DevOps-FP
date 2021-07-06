@@ -80,8 +80,8 @@ class findPrices():
     @staticmethod
     def consolidatePrices(listDF):
         """
-        This function appends an unlimited number of data (that have the same width) to create on sngle 
-        consolidated datafram
+        This function appends the dataframes that are passed as argument (listDF) (that have the same width - or nb cols) to create one single 
+        consolidated dataframe (concatenated dataframes)
 
         :param listDf: a list of dataframes
         :returns: a single dataframe
