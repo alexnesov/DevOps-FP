@@ -26,7 +26,7 @@ qu = "SELECT * FROM\
 def generateUniqueID(df, colNames):
     """
     :param df:
-    :param df: list of strings
+    :param colNames: list of strings; being the column names
     """
     df['UniqueID'] = df[f'{colNames[0]}'].apply(lambda x: x.strftime('%Y%m%d')) + df[f'{colNames[1]}']
 
