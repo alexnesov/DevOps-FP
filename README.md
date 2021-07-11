@@ -47,3 +47,10 @@ Tried this after "broken pipe" error message:</br>
 <code>python3 -m pip install --user virtualenv</code></br>
 <code>virtualenv test-venv</code></br>
 <code>source /var/lib/jenkins/virtualenvs/test-env/bin/activate</code>
+</br>
+
+To install new python library in the virtual environnement used by the Jenkins pipeline:</br>
+-Log into the Ubuntu VM</br>
+-Enter in Jenkins' prompt: <code>sudo su - jenkins</code></br>
+-Active the virtual env used by the pipeline: <code>source /var/lib/jenkins/virtualenvs/test-env/bin/activate</code>
+-Pip install
