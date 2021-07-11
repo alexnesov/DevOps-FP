@@ -27,12 +27,11 @@ def getSPiexCloud():
     ts = td.time_series(
     symbol="SPX",
     interval="1day",
-    start_date="2021-07-09",
-    end_date="2021-07-10"
+    start_date=today,
+    end_date=tomorrow
     ).as_pandas().reset_index().rename(columns=spColNames)
 
     print(ts)
-
     return ts
 
 """
