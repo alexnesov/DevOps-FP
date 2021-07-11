@@ -45,7 +45,7 @@ Tried this after "broken pipe" error message:</br>
 <code>ps -aux | grep jenkins</code></br>
 <code>curl -v &ltwebsite&gt</code></br>
 <code>python3 -m pip install --user virtualenv</code></br>
-<code>virtualenv test-venv</code></br>
+To create a new virtual env: <code>virtualenv test-venv</code></br>
 <code>source /var/lib/jenkins/virtualenvs/test-env/bin/activate</code>
 </br>
 
@@ -53,5 +53,5 @@ Tried this after "broken pipe" error message:</br>
 </br>
 -Log into the Ubuntu VM</br>
 -Enter in Jenkins' prompt: <code>sudo su - jenkins</code></br>
--Active the virtual env used by the pipeline: <code>source /var/lib/jenkins/virtualenvs/test-env/bin/activate</code>
+-Active the virtual env used by the pipeline: <code>source /var/lib/jenkins/virtualenvs/test-env/bin/activate</code></br>
 -Pip install
