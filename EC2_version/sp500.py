@@ -8,9 +8,8 @@ tomorrow = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
 #import twelvedata
 
-IEX_KEY = os.environ.get('iexcloud_key') 
-print(IEX_KEY)
-td = TDClient(apikey=IEX_KEY)  
+TWELVE_KEY = os.environ.get('twelve_key') 
+td = TDClient(apikey=TWELVE_KEY)  
 
 
 #SPX
@@ -23,7 +22,7 @@ spColNames = {"datetime":"Date",
               "volume":"Volume"}
 
 
-def getSPiexCloud():
+def getTwelveData():
     ts = td.time_series(
     symbol="SPX",
     interval="1day",
@@ -49,9 +48,8 @@ def sendToRDS(df):
 
 
 def main():
-    df = getSPiexCloud()
+    df = getTwelveData()
     sendToRDS(df)
 
 if __name__ == "__main__":
     main()
-
