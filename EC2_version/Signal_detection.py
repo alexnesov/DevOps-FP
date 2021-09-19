@@ -1,12 +1,10 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None 
-import talib
+import talib, sys, os
 import numpy as np
 from datetime import datetime, timedelta 
 from time import strftime
-import os
 from utils.db_manage import QuRetType, dfToRDS, std_db_acc_obj
-import sys
 sys.stdout.flush()
 
 today                   = datetime.today()
@@ -37,7 +35,7 @@ for k in keys:
     validSymbols[k] = []
 
 
-def SignalDetection(df, tick, *args):
+def SignalDetection(df, tick):
     """
     This function downloads prices for desired quotes (those in the parameter)
     and then tries to catch signals for selected timeframe.
