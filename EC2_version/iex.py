@@ -11,3 +11,7 @@ df_market_data      = pd.DataFrame.from_records(json_market_data)
 
 
 
+df_market_data.to_csv('df_market_data', index=False)
+
+
+df = pd.read_csv('df_market_data.csv')
