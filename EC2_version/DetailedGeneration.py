@@ -49,31 +49,31 @@ def SignalDetection(df, tick, *args):
     :returns: df with signals
     """
 
-    close = df["Close"].to_numpy()
-    high = df["High"].to_numpy()
-    low = df["Low"].to_numpy()
+    close               = df["Close"].to_numpy()
+    high                = df["High"].to_numpy()
+    low                 = df["Low"].to_numpy()
 
     # Aroon
-    aroonDOWN, aroonUP = talib.AROON(high=high, low=low,timeperiod=Aroonval)  ####
+    aroonDOWN, aroonUP  = talib.AROON(high=high, low=low,timeperiod=Aroonval)  ####
     # RSI
-    ind_rsi = talib.RSI(close, timeperiod=timePeriodRSI)
+    ind_rsi             = talib.RSI(close, timeperiod=timePeriodRSI)
 
-    df['RSI'] = ind_rsi
-    df['Aroon Down'] = aroonDOWN
-    df['Aroon Up'] = aroonUP
-    df['signal'] = pd.Series(np.zeros(len(df)))
-    df['signal_aroon'] = pd.Series(np.zeros(len(df)))
-    df = df.reset_index()
+    df['RSI']           = ind_rsi
+    df['Aroon Down']    = aroonDOWN
+    df['Aroon Up']      = aroonUP
+    df['signal']        = pd.Series(np.zeros(len(df)))
+    df['signal_aroon']  = pd.Series(np.zeros(len(df)))
+    df                  = df.reset_index()
     # Moving averages
-    df['short_mavg'] = df['Close'].rolling(window=short_window, min_periods=1, center=False).mean()
-    df['long_mavg'] = df['Close'].rolling(window=long_window, min_periods=1, center=False).mean()
+    df['short_mavg']    = df['Close'].rolling(window=short_window, min_periods=1, center=False).mean()
+    df['long_mavg']     = df['Close'].rolling(window=long_window, min_periods=1, center=False).mean()
 
     # When 'Aroon Up' crosses 'Aroon Down' from below
-    df["signal"][short_window:] =np.where(df['short_mavg'][short_window:] > df['long_mavg'][short_window:], 1,0)
-    df["signal_aroon"][short_window:] =np.where(df['Aroon Down'][short_window:] < df['Aroon Up'][short_window:], 1,0)
+    df["signal"][short_window:]         = np.where(df['short_mavg'][short_window:] > df['long_mavg'][short_window:], 1,0)
+    df["signal_aroon"][short_window:]   = np.where(df['Aroon Down'][short_window:] < df['Aroon Up'][short_window:], 1,0)
 
-    df['positions'] = df['signal'].diff()
-    df['positions_aroon'] = df['signal_aroon'].diff()
+    df['positions']                     = df['signal'].diff()
+    df['positions_aroon']               = df['signal_aroon'].diff()
     df['positions_aroon'].value_counts()
 
     # Trend reversal detection
@@ -148,26 +148,25 @@ def sendDataInChunks(finalDF):
     Sleep seems also necessary. 5 secs seems ok.
     """
 
-    lenDF = len(finalDF)
-    nChunks = round(lenDF/50000)
+    lenDF       = len(finalDF)
+    nChunks     = round(lenDF/50000)
 
-
-    initChunk = True
-    if nChunks>0:
+    initChunk   = True
+    if nChunks > 0:
         for i in list(range(nChunks)):
 
-            if initChunk==True:
-                chunk = finalDF[0:50000]
-                initChunk = False
-                currentChunk = 50000
+            if initChunk == True:
+                chunk           = finalDF[0:50000]
+                initChunk       = False
+                currentChunk    = 50000
                 print("Sending chunk n°", i)
                 dfToRDS(df=chunk,table='Signals_details',db_name='signals')
                 time.sleep(5)
                 print('Next chunk')
             else:
-                nextChunk = currentChunk + 50000
-                chunk = finalDF[currentChunk:nextChunk]
-                currentChunk = nextChunk
+                nextChunk       = currentChunk + 50000
+                chunk           = finalDF[currentChunk:nextChunk]
+                currentChunk    = nextChunk
                 print("Sending chunk n°", i)
                 dfToRDS(df=chunk,table='Signals_details',db_name='signals')
                 time.sleep(5)
@@ -181,11 +180,13 @@ def sendDataInChunks(finalDF):
 
 
 def getsp500(DateSP='2020-01-01'):
-    qu=f"SELECT Date, Close FROM marketdata.sp500 where Date>='{DateSP}'"
-    sp500df = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
+    """
+    """
+    qu                  = f"SELECT Date, Close FROM marketdata.sp500 where Date>='{DateSP}'"
+    sp500df             = db_acc_obj.exc_query(db_name='marketdata', query=qu,\
         retres=QuRetType.ALLASPD)
-    sp500df.Date = pd.to_datetime(sp500df.Date)
-    sp500df = sp500df.rename(columns={'Close':'Close_sp'})
+    sp500df.Date        = pd.to_datetime(sp500df.Date)
+    sp500df             = sp500df.rename(columns={'Close':'Close_sp'})
 
     return sp500df
     
@@ -193,50 +194,50 @@ def getsp500(DateSP='2020-01-01'):
 
 
 if __name__ == "__main__":
-    db_acc_obj = std_db_acc_obj() 
-    SEs = ["NYSE", "NASDAQ"]
+    db_acc_obj          = std_db_acc_obj() 
+    SEs                 = ["NYSE", "NASDAQ"]
     # 1. Get a List of signaled tickers to be used in for loop
-    df = getSignaledStocks()
-    tickers = df['ValidTick'].to_list()
+    df                  = getSignaledStocks()
+    tickers             = df['ValidTick'].to_list()
     tickers.sort()
 
     ### COUNTING - START
-    RemainingTickers = len(tickers) 
+    RemainingTickers    = len(tickers) 
     print(f'{RemainingTickers} stocks to analyze.')
     ### COUNTING - END
 
     # 2. Get an the dataframe containing the financial info. 
     # to be processed for the Detailed Generation
-    init = True             # init is for csvAppend()
-    initStock = True
+    init                        = True             # init is for csvAppend()
+    initStock                   = True
     for stockExchange in SEs:
         print(f'Getting RDS stock market data for {stockExchange}')
         initialDF = getData(stockExchange)
         csvAppend(initialDF,'initialDF')
     
-    initialDF = pd.read_csv('initialDF.csv')
+    initialDF                   = pd.read_csv('initialDF.csv')
 
     #### SP500 data fetch + % evol 1D calculation"
     print('Getting SP500 data from RDS. . .')
-    dfsp500 = getsp500() # YYYY-MM-DD
-    dfsp500['returnSP500_1D'] =  dfsp500.Close_sp.pct_change()[1:]
+    dfsp500                     = getsp500() # YYYY-MM-DD
+    dfsp500['returnSP500_1D']   =  dfsp500.Close_sp.pct_change()[1:]
     #### SP500 data fetch + % evol 1D calculation"
 
     init = True
     for tick in tickers:
-        RemainingTickers -= 1
-        if RemainingTickers%500==0:
+        RemainingTickers                        -= 1
+        if RemainingTickers%500                 == 0:
             print(f'{RemainingTickers} remaining tickers to analyze.')
         try:
-            filteredDF = initialDF.loc[initialDF['Symbol']==f'{tick}']
-            dfStock = SignalDetection(filteredDF, tick)
-            dfStock[f'return_1D'] = dfStock.Close.pct_change()[1:] # YYYY-MM-DD
+            filteredDF                          = initialDF.loc[initialDF['Symbol']==f'{tick}']
+            dfStock                             = SignalDetection(filteredDF, tick)
+            dfStock[f'return_1D']               = dfStock.Close.pct_change()[1:] # YYYY-MM-DD
             dfStock.Date = pd.to_datetime(dfStock.Date)
             dfStock = pd.merge(dfStock, dfsp500, on='Date',how='inner')
-            dfStock['diff_stock_bench'] = dfStock['return_1D'] - dfStock['returnSP500_1D']
-            dfStock[f'rolling_mean_{35}'] = dfStock['diff_stock_bench'].rolling(35).mean()
-            dfStock[f'rolling_mean_{10}'] = dfStock['diff_stock_bench'].rolling(10).mean()
-            dfStock[f'rolling_mean_{5}'] = dfStock['diff_stock_bench'].rolling(5).mean()
+            dfStock['diff_stock_bench']         = dfStock['return_1D'] - dfStock['returnSP500_1D']
+            dfStock[f'rolling_mean_{35}']       = dfStock['diff_stock_bench'].rolling(35).mean()
+            dfStock[f'rolling_mean_{10}']       = dfStock['diff_stock_bench'].rolling(10).mean()
+            dfStock[f'rolling_mean_{5}']        = dfStock['diff_stock_bench'].rolling(5).mean()
 
             # 3. Appending each new report for each tick to detailedSignals.csv
             csvAppend(dfStock,'detailedSignals')
