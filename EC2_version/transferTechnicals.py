@@ -1,20 +1,8 @@
 import pandas as pd
 from utils.db_manage import DBManager, QuRetType, dfToRDS, std_db_acc_obj
-import numpy as np
-import os
 from datetime import datetime, timedelta 
-import fnmatch
 today = str(datetime.today().strftime('%Y-%m-%d'))
 yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
-
-"""
-# For many files
-fileNames = os.listdir('/home/ubuntu/financials-downloader-bot/downloads/')
-TechnicalFiles = []
-for file in fileNames:
-    if fnmatch.fnmatch(file, 'Technical*'):
-        TechnicalFiles.append(file)
-"""
 
 
 class technicalsToRDS():
@@ -48,10 +36,9 @@ def main():
     """
     One file: today
     """
-    df = pd.read_csv(f'~/financials-downloader-bot/downloads/Technical_{yesterday}.csv')
-    print(df)
-    filename = f'Technical_{yesterday}.csv'
-    std = technicalsToRDS(filename,df)
+    df          = pd.read_csv(f'~/financials-downloader-bot/downloads/Technical_{yesterday}.csv')
+    filename    = f'Technical_{yesterday}.csv'
+    std         = technicalsToRDS(filename,df)
     std.addDateToDF()
     std.renameCols()
     std.sendData()

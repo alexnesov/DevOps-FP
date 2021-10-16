@@ -1,29 +1,26 @@
 import pandas as pd
 import yfinance as yf
-from talib import MA_Type
-import talib
 import numpy as np
 from datetime import datetime, timedelta 
 from time import strftime
-import time 
-import sys
+import time, sys, talib
 from utils.db_manage import QuRetType, dfToRDS, std_db_acc_obj
 
 sys.stdout.flush()
 pd.options.mode.chained_assignment = None 
 
 #today = str(datetime.today().strftime('%Y-%m-%d'))
-today = datetime.today()
-today_str = today.strftime('%Y-%m-%d')
+today       = datetime.today()
+today_str   = today.strftime('%Y-%m-%d')
 
-now = strftime("%H:%M:%S")
-now = now.replace(":","-")
+now         = strftime("%H:%M:%S")
+now         = now.replace(":","-")
 
 # PARAMETERS
-Aroonval = 40
-short_window =10
-long_window = 50
-timePeriodRSI = 14
+Aroonval        = 40
+short_window    = 10
+long_window     = 50
+timePeriodRSI   = 14
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
 start_date = today - timedelta(days=20)
@@ -232,8 +229,8 @@ if __name__ == "__main__":
             filteredDF                          = initialDF.loc[initialDF['Symbol']==f'{tick}']
             dfStock                             = SignalDetection(filteredDF, tick)
             dfStock[f'return_1D']               = dfStock.Close.pct_change()[1:] # YYYY-MM-DD
-            dfStock.Date = pd.to_datetime(dfStock.Date)
-            dfStock = pd.merge(dfStock, dfsp500, on='Date',how='inner')
+            dfStock.Date                        = pd.to_datetime(dfStock.Date)
+            dfStock                             = pd.merge(dfStock, dfsp500, on='Date',how='inner')
             dfStock['diff_stock_bench']         = dfStock['return_1D'] - dfStock['returnSP500_1D']
             dfStock[f'rolling_mean_{35}']       = dfStock['diff_stock_bench'].rolling(35).mean()
             dfStock[f'rolling_mean_{10}']       = dfStock['diff_stock_bench'].rolling(10).mean()
