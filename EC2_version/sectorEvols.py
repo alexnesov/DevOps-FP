@@ -9,7 +9,7 @@ today           = date.today()
 str_today       = str(today.strftime('%Y-%m-%d'))
 
 print("today:", today)
-start_date_1year      = today - timedelta(days=400)
+start_date_1year      = today - timedelta(days=370)
 str_start_date_1year  = str(start_date_1year.strftime('%Y-%m-%d'))
 
 # SQL Date format: yyyy-mm-dd
@@ -36,14 +36,14 @@ if __name__ == "__main__":
         str_today       = str(today.strftime('%Y-%m-%d'))
         print('----today----')
 
-    quTODAY = f"SELECT Ticker, Date, Close \
+    quTODAY = f"SELECT Ticker, Sector, Industry, Date, Close \
     FROM marketdata.sectors \
     INNER JOIN \
         (SELECT * FROM marketdata.NASDAQ_20 \
         WHERE DATE = '{str_today}')t \
     ON marketdata.sectors.Ticker = t.Symbol \
     UNION ALL \
-    SELECT Ticker, Date, Close \
+    SELECT Ticker, Sector, Industry, Date, Close \
     FROM marketdata.sectors \
     INNER JOIN \
         (SELECT * FROM marketdata.NYSE_20 \
@@ -55,10 +55,12 @@ if __name__ == "__main__":
                                     retres    = QuRetType.ALLASPD)
 
     print(df_today)
+    df_consolidated = df_today[['Ticker', 'Sector', 'Industry', 'Close']]
+
     ########################################################################################
 
 
-    for day in [2, 6, 31, 91, 181, 370]:
+    for day in [1, 5, 30, 90, 180, 360]:
         print(f'-----DAY(s): {day}')
         start_date      = today - timedelta(days=day)
         str_start_date  = str(start_date.strftime('%Y-%m-%d'))
@@ -71,14 +73,14 @@ if __name__ == "__main__":
 
             print('----found.----')
 
-        qu = f"SELECT Ticker, Date, Close \
+        qu = f"SELECT Ticker, Sector, Industry, Date, Close \
             FROM marketdata.sectors \
             INNER JOIN \
                 (SELECT * FROM marketdata.NASDAQ_20 \
                 WHERE DATE = '{str_start_date}')t \
             ON marketdata.sectors.Ticker = t.Symbol \
             UNION ALL \
-            SELECT Ticker, Date, Close \
+            SELECT Ticker, Sector, Industry, Date, Close \
             FROM marketdata.sectors \
             INNER JOIN \
                 (SELECT * FROM marketdata.NYSE_20 \
@@ -90,4 +92,7 @@ if __name__ == "__main__":
                                 query     = qu,
                                 retres    = QuRetType.ALLASPD)
 
+        df_consolidated[f'Close_{day}'] = df_day['Close']
         print(df_day)
+
+    print(df_consolidated)
