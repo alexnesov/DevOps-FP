@@ -23,9 +23,8 @@ qu = "SELECT * FROM\
 
 
 
-def generateUniqueID(df, colNames):
+def generateUniqueID(df: pd.DataFrame, colNames: list):
     """
-    :param df:
     :param colNames: list of strings; being the column names
     """
     df['UniqueID'] = df[f'{colNames[0]}'].apply(lambda x: x.strftime('%Y%m%d')) + df[f'{colNames[1]}']
@@ -33,33 +32,51 @@ def generateUniqueID(df, colNames):
     return df
 
 
-class generateSignalsDF:
+class SignalsDF:
+    """
+    Example of output (self.dfSignals_formated):
 
-    def __init__(self, nDaysBack, dfSignals):
-        self.dfSignals = dfSignals
-        self.nDaysBack = nDaysBack
+    ValidTick	SignalDate	PriceAtSignal	D30	        UniqueID
+    217	BYM	    2021-12-01	15.44	        2021-12-31	20211231BYM
+    218	BURL	2021-12-01	280.66	        2021-12-31	20211231BURL
+    219	MUI	    2021-12-01	15.47	        2021-12-31	20211231MUI
+    220	KFFB	2021-12-01	7.25	        2021-12-31	20211231KFFB
+    221	HCM	    2021-11-30	33.86	        2021-12-30	20211230HCM
+    """
+
+    def __init__(self, nDaysBack: int, dfSignals: pd.DataFrame):
+        self.dfSignals          = dfSignals
+        self.nDaysBack          = nDaysBack
+        self.dfSignals_formated = pd.DataFrame
+
+    
+    def generate_formatted_signals_df(self):
+        self._cleanDF()
+        self._generateForwardDate()
 
 
-    def cleanDF(self):
-        dfSignals_reduced = self.dfSignals[['ValidTick','SignalDate','PriceAtSignal']]
+    def _cleanDF(self):
+        dfSignals_reduced       = self.dfSignals[['ValidTick','SignalDate','PriceAtSignal']]
         
-        # Getting rid of rows where the Symbol contains '.' or '-' (not stocks)
-        symbols = ['\.','-']
-        pattern = '|'.join(symbols)
-        self.dfSignals_filtered = dfSignals_reduced[~dfSignals_reduced['ValidTick']\
+        # Getting rid of rows where the Ticker string contains '.' or '-' (not stocks)
+        characters              = ['\.','-']
+        pattern                 = '|'.join(characters)
+        self.dfSignals_formated = dfSignals_reduced[~dfSignals_reduced['ValidTick']\
                                     .str.contains(pattern, case=False)]
 
-
-
-    def generateForwardDate(self):
+    def _generateForwardDate(self):
+        """
+        To insert a col that contains the date at day+30 after the signal, for every signaled stock since the 
+        implementation of the signal algo
+        """
         # Creating a column that contains the date of the signal +20days, for every stock
-        self.dfSignals_filtered[f'D{self.nDaysBack}'] = self.dfSignals_filtered['SignalDate'] \
+        self.dfSignals_formated[f'D{self.nDaysBack}'] = self.dfSignals_formated['SignalDate'] \
             + timedelta(days=self.nDaysBack)
 
         # Filter for the signals that are > than 20 days older
-        dateBack = datetime.date(today - timedelta(days=self.nDaysBack))
-        self.dfSignals_filtered = self.dfSignals_filtered.loc[self.dfSignals_filtered['SignalDate'] < dateBack]
-        self.dfSignals_filtered = generateUniqueID(self.dfSignals_filtered, [f'D{self.nDaysBack}', 'ValidTick'])
+        dateBack                = datetime.date(today - timedelta(days=self.nDaysBack))
+        self.dfSignals_formated = self.dfSignals_formated.loc[self.dfSignals_formated['SignalDate'] < dateBack]
+        self.dfSignals_formated = generateUniqueID(self.dfSignals_formated, [f'D{self.nDaysBack}', 'ValidTick'])
 
 
 
@@ -97,8 +114,8 @@ class StockPrices():
 
     def dlPrices(self):
         # Getting the price for every stock, at d+x
-        QUpricesNASDAQ = f"select * from marketdata.NASDAQ_20 where Symbol IN {self.tickers} and Date>'2020-12-15'"
-        QUpricesNYSE = f"select * from marketdata.NYSE_20 where Symbol IN {self.tickers} and Date>'2020-12-15'"
+        QUpricesNASDAQ  = f"select * from marketdata.NASDAQ_20 where Symbol IN {self.tickers} and Date>'2020-12-15'"
+        QUpricesNYSE    = f"select * from marketdata.NYSE_20 where Symbol IN {self.tickers} and Date>'2020-12-15'"
             
         self.NASDAQPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNASDAQ, \
             retres=QuRetType.ALLASPD)
@@ -119,26 +136,25 @@ def main():
         retres = QuRetType.ALLASPD)
     #for holdingDays in [5,10,20,30,40,50]:
     
-    holdingDays = 30
+    holdingDays = 20
 
 
     print(f'{len(dfSignals.SignalDate.unique())} business days since the beginning of the Signals existence.')
     print(f'The following results show the average price evolution {holdingDays} \
     holding days after the Signal was sent by the system.')
 
-    tickers = tuple(dfSignals['ValidTick'])
-    SP      = StockPrices(tickers)
-    sig     = generateSignalsDF(holdingDays,dfSignals)
-    sig.cleanDF()
-    sig.generateForwardDate()
-
+    tickers     = tuple(dfSignals['ValidTick'])
+    SP          = StockPrices(tickers)
+    sig         = SignalsDF(holdingDays, dfSignals)
+    sig.generate_formatted_signals_df()
+    sig.dfSignals_formated
 
     # Findin the prices for every tick, at D+x
-    pricesAtD20 = SP.consPriceDF.loc[SP.consPriceDF['UniqueID']\
-                .isin(sig.dfSignals_filtered['UniqueID'])][['Close','UniqueID']]
+    df_pricesAtDx = SP.consPriceDF.loc[SP.consPriceDF['UniqueID']\
+                .isin(sig.dfSignals_formated['UniqueID'])][['Close','UniqueID']]
 
     # Here we have on the left the prices at signal and on the right, the prices at D+20
-    result                      = pd.merge(sig.dfSignals_filtered, pricesAtD20, on=["UniqueID"])
+    result                      = pd.merge(sig.dfSignals_formated, df_pricesAtDx, on=["UniqueID"])
     result['PriceAtSignal']     = result['PriceAtSignal'].astype(float)
     result['Evolution']         = (result['Close'] - result['PriceAtSignal'])/result['PriceAtSignal']
     mean_evol                   = round(result.Evolution.mean(),3)
