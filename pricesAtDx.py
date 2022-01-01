@@ -1,8 +1,8 @@
 """
-This script serves to find the prices of a list of tickers, at a + x days from 
+This script serves to find the prices of a list of tickers, at + Dx days from 
 a their given signal date.
 So, essentially, one dataframe and two columns (Date and ticker) are required here to get the
-desire output.
+desired output.
 
 It is useful - among other things - to back-test some trading strategies
 """
@@ -134,34 +134,33 @@ def main():
     global result
     dfSignals = db_acc_obj.exc_query(db_name='signals', query=qu, \
         retres = QuRetType.ALLASPD)
-    #for holdingDays in [5,10,20,30,40,50]:
+    #for HOLDING_DAYS in [5,10,20,30,40,50]:
     
-    holdingDays = 20
-
+    HOLDING_DAYS = 20
 
     print(f'{len(dfSignals.SignalDate.unique())} business days since the beginning of the Signals existence.')
-    print(f'The following results show the average price evolution {holdingDays} \
+    print(f'The following results show the average price evolution {HOLDING_DAYS} \
     holding days after the Signal was sent by the system.')
 
     tickers     = tuple(dfSignals['ValidTick'])
     SP          = StockPrices(tickers)
-    sig         = SignalsDF(holdingDays, dfSignals)
+    sig         = SignalsDF(HOLDING_DAYS, dfSignals)
     sig.generate_formatted_signals_df()
     sig.dfSignals_formated
 
     # Findin the prices for every tick, at D+x
     df_pricesAtDx = SP.consPriceDF.loc[SP.consPriceDF['UniqueID']\
-                .isin(sig.dfSignals_formated['UniqueID'])][['Close','UniqueID']]
+                      .isin(sig.dfSignals_formated['UniqueID'])][['Close','UniqueID']]
 
     # Here we have on the left the prices at signal and on the right, the prices at D+20
     result                      = pd.merge(sig.dfSignals_formated, df_pricesAtDx, on=["UniqueID"])
     result['PriceAtSignal']     = result['PriceAtSignal'].astype(float)
     result['Evolution']         = (result['Close'] - result['PriceAtSignal'])/result['PriceAtSignal']
     mean_evol                   = round(result.Evolution.mean(),3)
-    print(f'Mean_evol for one period: (1 period = {holdingDays} days): ', mean_evol*100, '%')
+    print(f'Mean_evol for one period: (1 period = {HOLDING_DAYS} days): ', mean_evol*100, '%')
     n_days                      = len(result.SignalDate.unique())
     # 1 period is the 20 days holding
-    n_periods                   = int(n_days/holdingDays)
+    n_periods                   = int(n_days/HOLDING_DAYS)
     comp_gains                  = (((1+mean_evol)**n_periods)-1)*100
 
     print(f"Compounded gains over the {n_periods} periods ({n_days} days) are: {round(comp_gains,2)} %")
