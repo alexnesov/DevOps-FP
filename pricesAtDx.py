@@ -63,15 +63,13 @@ class generateSignalsDF:
 
 
 
-class findPrices():
+class StockPrices():
     """
 
     """
 
-    def __init__(self, tickers):
+    def __init__(self, tickers: list):
         """
-        :param df:  ==> pandas dataframe
-        :param tickers: 
         """
         self.tickers = tickers
         self.consPriceDF = self.dlPrices()
@@ -106,7 +104,7 @@ class findPrices():
             retres=QuRetType.ALLASPD)
         self.NYSEPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
             retres=QuRetType.ALLASPD)
-        consPrice = findPrices.consolidatePrices([self.NASDAQPrices, self.NYSEPrices])
+        consPrice = StockPrices.consolidatePrices([self.NASDAQPrices, self.NYSEPrices])
 
         return consPrice
 
@@ -118,41 +116,37 @@ def main():
 
     global result
     dfSignals = db_acc_obj.exc_query(db_name='signals', query=qu, \
-        retres=QuRetType.ALLASPD)
+        retres = QuRetType.ALLASPD)
     #for holdingDays in [5,10,20,30,40,50]:
     
     holdingDays = 30
 
-    print("Average general price evolution: ", round(dfSignals.PriceEvolution.mean(),2), "%")
+
     print(f'{len(dfSignals.SignalDate.unique())} business days since the beginning of the Signals existence.')
     print(f'The following results show the average price evolution {holdingDays} \
-holding days after the Signal was sent by the system.')
+    holding days after the Signal was sent by the system.')
 
     tickers = tuple(dfSignals['ValidTick'])
-    FP = findPrices(tickers)
-    sig = generateSignalsDF(holdingDays,dfSignals)
+    SP      = StockPrices(tickers)
+    sig     = generateSignalsDF(holdingDays,dfSignals)
     sig.cleanDF()
     sig.generateForwardDate()
 
 
     # Findin the prices for every tick, at D+x
-    pricesAtD20 = FP.consPriceDF.loc[FP.consPriceDF['UniqueID']\
+    pricesAtD20 = SP.consPriceDF.loc[SP.consPriceDF['UniqueID']\
                 .isin(sig.dfSignals_filtered['UniqueID'])][['Close','UniqueID']]
 
-
-
     # Here we have on the left the prices at signal and on the right, the prices at D+20
-    result = pd.merge(sig.dfSignals_filtered, pricesAtD20, on=["UniqueID"])
-    result['PriceAtSignal'] = result['PriceAtSignal'].astype(float)
-    result['Evolution'] = (result['Close'] - result['PriceAtSignal'])/result['PriceAtSignal']
-
-    mean_evol = round(result.Evolution.mean(),3)
+    result                      = pd.merge(sig.dfSignals_filtered, pricesAtD20, on=["UniqueID"])
+    result['PriceAtSignal']     = result['PriceAtSignal'].astype(float)
+    result['Evolution']         = (result['Close'] - result['PriceAtSignal'])/result['PriceAtSignal']
+    mean_evol                   = round(result.Evolution.mean(),3)
     print(f'Mean_evol for one period: (1 period = {holdingDays} days): ', mean_evol*100, '%')
-
-    n_days = len(result.SignalDate.unique())
+    n_days                      = len(result.SignalDate.unique())
     # 1 period is the 20 days holding
-    n_periods = int(n_days/holdingDays)
-    comp_gains = (((1+mean_evol)**n_periods)-1)*100
+    n_periods                   = int(n_days/holdingDays)
+    comp_gains                  = (((1+mean_evol)**n_periods)-1)*100
 
     print(f"Compounded gains over the {n_periods} periods ({n_days} days) are: {round(comp_gains,2)} %")
 
@@ -167,26 +161,5 @@ if __name__ == "__main__":
 
 
 
-
-
-
-
-
-
-
-
-def getPrice(symbol, date):
-    """
-    param symbol: str, the name of the ticker
-    param date: str, yyyy-mm-dd
-    returns price: int
-    """
-    price = selectedAtD20.loc[(selectedAtD20['Symbol']==symbol) & (selectedAtD20['Date']==date)]['Close']
-
-    return price
-
-
-
-# getPrice('BIB','2021-06-07')
 
 
