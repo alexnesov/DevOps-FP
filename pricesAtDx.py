@@ -88,9 +88,9 @@ class StockPrices():
     def __init__(self, tickers: list):
         """
         """
-        self.tickers = tickers
-        self.consPriceDF = self.dlPrices()
-        self.consPriceDF = generateUniqueID(self.consPriceDF,['Date','Symbol'])
+        self.tickers        = tickers
+        self.consPriceDF    = self.dlPrices(start_date = '2020-12-15')
+        self.consPriceDF    = generateUniqueID(self.consPriceDF,['Date','Symbol'])
 
     @staticmethod
     def consolidatePrices(listDF):
@@ -112,14 +112,19 @@ class StockPrices():
         return consPrices
 
 
-    def dlPrices(self):
+    def dlPrices(self, start_date, end_date = None):
         # Getting the price for every stock, at d+x
-        QUpricesNASDAQ  = f"select * from marketdata.NASDAQ_20 where Symbol IN {self.tickers} and Date>'2020-12-15'"
-        QUpricesNYSE    = f"select * from marketdata.NYSE_20 where Symbol IN {self.tickers} and Date>'2020-12-15'"
-            
-        self.NASDAQPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNASDAQ, \
+
+        if end_date == None:
+            QUpricesNASDAQ  = f"select * from marketdata.NASDAQ_20 where Symbol IN {self.tickers} and Date>'{start_date}'"
+            QUpricesNYSE    = f"select * from marketdata.NYSE_20 where Symbol IN {self.tickers} and Date>'{start_date}'"
+        else:
+            QUpricesNASDAQ  = f"select * from marketdata.NASDAQ_20 where Symbol IN {self.tickers} and Date BETWEEN '{start_date}' AND '{end_date}'"
+            QUpricesNYSE    = f"select * from marketdata.NYSE_20 where Symbol IN {self.tickers} and Date BETWEEN '{start_date}' AND '{end_date}'"
+                    
+        self.NASDAQPrices   = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNASDAQ, \
             retres=QuRetType.ALLASPD)
-        self.NYSEPrices = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
+        self.NYSEPrices     = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
             retres=QuRetType.ALLASPD)
         consPrice = StockPrices.consolidatePrices([self.NASDAQPrices, self.NYSEPrices])
 
@@ -138,7 +143,7 @@ def main():
     
     HOLDING_DAYS = 20
 
-    print(f'{len(dfSignals.SignalDate.unique())} business days since the beginning of the Signals existence.')
+    print(f'{len(dfSignals.SignalDate.unique())} trading days since the beginning of the Signals existence.')
     print(f'The following results show the average price evolution {HOLDING_DAYS} \
     holding days after the Signal was sent by the system.')
 
