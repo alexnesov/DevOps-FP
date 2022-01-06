@@ -26,6 +26,35 @@ qu = "SELECT * FROM\
 def generateUniqueID(df: pd.DataFrame, colNames: list):
     """
     :param colNames: list of strings; being the column names
+
+    Ex:
+    FROM:
+            Symbol        Date   Close    
+    0         AAL  2020-12-16    16.86  
+    1        AAME  2020-12-16    2.29      
+    2        AAOI  2020-12-16    8.32    
+    3        AAWW  2020-12-16    55.53    
+    4        AAXJ  2020-12-16    87.51   
+    ...       ...         ...         
+    402068    ZBH  2022-01-05    130.01   
+    402069    ZEN  2022-01-05     96.87   
+    402070    ZNH  2022-01-05     30.99     
+    402071    ZTO  2022-01-05     27.86   
+    402072    ZTS  2022-01-05    216.56       
+
+    TO:
+    Close      UniqueID
+    2.15    20210105ADMA
+    2.80    20210105AGRX
+    30.50   20210105AMTI
+    4.54    20210105CLXT
+    3.10    20210105CYCN
+                    ...
+    69.65   20220104PNW
+    45.75   20220104UGI
+    20.33   20220105PINE
+
+
     """
     df['UniqueID'] = df[f'{colNames[0]}'].apply(lambda x: x.strftime('%Y%m%d')) + df[f'{colNames[1]}']
 
@@ -82,18 +111,9 @@ class SignalsDF:
 
 class StockPrices():
     """
-
     """
 
-    def __init__(self, tickers: list):
-        """
-        """
-        self.tickers        = tickers
-        self.consPriceDF    = self.dlPrices(start_date = '2020-12-15')
-        self.consPriceDF    = generateUniqueID(self.consPriceDF,['Date','Symbol'])
-
-    @staticmethod
-    def consolidatePrices(listDF):
+    def _consolidatePrices(listDF):
         """
         This function appends the dataframes that are passed as argument (listDF) (that have the same width - or nb cols) to create one single 
         consolidated dataframe (concatenated dataframes)
@@ -112,26 +132,27 @@ class StockPrices():
         return consPrices
 
 
-    def dlPrices(self, start_date, end_date = None):
+    def dl_Prices(tickers, start_date, end_date = None):
         # Getting the price for every stock, at d+x
 
         if end_date == None:
-            QUpricesNASDAQ  = f"select * from marketdata.NASDAQ_20 where Symbol IN {self.tickers} and Date>'{start_date}'"
-            QUpricesNYSE    = f"select * from marketdata.NYSE_20 where Symbol IN {self.tickers} and Date>'{start_date}'"
+            QUpricesNASDAQ  = f"select * from marketdata.NASDAQ_20 where Symbol IN {tickers} and Date>'{start_date}'"
+            QUpricesNYSE    = f"select * from marketdata.NYSE_20 where Symbol IN {tickers} and Date>'{start_date}'"
         else:
-            QUpricesNASDAQ  = f"select * from marketdata.NASDAQ_20 where Symbol IN {self.tickers} and Date BETWEEN '{start_date}' AND '{end_date}'"
-            QUpricesNYSE    = f"select * from marketdata.NYSE_20 where Symbol IN {self.tickers} and Date BETWEEN '{start_date}' AND '{end_date}'"
+            QUpricesNASDAQ  = f"select * from marketdata.NASDAQ_20 where Symbol IN {tickers} and Date BETWEEN '{start_date}' AND '{end_date}'"
+            QUpricesNYSE    = f"select * from marketdata.NYSE_20 where Symbol IN {tickers} and Date BETWEEN '{start_date}' AND '{end_date}'"
                     
-        self.NASDAQPrices   = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNASDAQ, \
+        NASDAQPrices   = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNASDAQ, \
             retres=QuRetType.ALLASPD)
-        self.NYSEPrices     = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
+        NYSEPrices     = db_acc_obj.exc_query(db_name='marketdata', query=QUpricesNYSE, \
             retres=QuRetType.ALLASPD)
-        consPrice = StockPrices.consolidatePrices([self.NASDAQPrices, self.NYSEPrices])
+
+        consPrice = StockPrices._consolidatePrices([NASDAQPrices, NYSEPrices])
 
         return consPrice
 
 
-# To be able ti display in variables visualizer
+# To be able to display in variables visualizer
 result = None
 
 def main():
@@ -147,15 +168,22 @@ def main():
     print(f'The following results show the average price evolution {HOLDING_DAYS} \
     holding days after the Signal was sent by the system.')
 
+
     tickers     = tuple(dfSignals['ValidTick'])
-    SP          = StockPrices(tickers)
     sig         = SignalsDF(HOLDING_DAYS, dfSignals)
     sig.generate_formatted_signals_df()
     sig.dfSignals_formated
 
+
     # Findin the prices for every tick, at D+x
-    df_pricesAtDx = SP.consPriceDF.loc[SP.consPriceDF['UniqueID']\
+    df_pricesAtDx = StockPrices.dl_Prices(tickers = tickers, start_date = '2020-12-15')
+
+    print(df_pricesAtDx)
+
+    df_pricesAtDx = generateUniqueID(df_pricesAtDx,['Date','Symbol']).loc[df_pricesAtDx['UniqueID']\
                       .isin(sig.dfSignals_formated['UniqueID'])][['Close','UniqueID']]
+
+    print(df_pricesAtDx)
 
     # Here we have on the left the prices at signal and on the right, the prices at D+20
     result                      = pd.merge(sig.dfSignals_formated, df_pricesAtDx, on=["UniqueID"])
