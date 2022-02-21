@@ -7,7 +7,14 @@ api_key             = os.getenv('iexcloudKey')
 # json_market_data  = requests.get(f'https://cloud.iexapis.com/stable/stock/market/previous?token={api_key}').json()
 
 
-# https://cloud.iexapis.com/stable/stock/market/sector-performance?token=sk_9eff719bc77648a6993aea4b0548aa55&format=csv
+
+
+
+# json_sector  = requests.get(f'https://cloud.iexapis.com/stable/stock/market/sector-performance?token={api_key}').json()
+
+
+
+
 
 
 df_market_data      = pd.DataFrame.from_records(json_market_data)

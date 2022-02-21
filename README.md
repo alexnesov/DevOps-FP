@@ -15,15 +15,11 @@ http://www.tadoc.org/index.htm </br>
 https://github.com/mrjbq7/ta-lib </br>
 
 
+
 <h5>Installing libraries for C++ sqlite3 connectivity:</h5>
 <code>sudo apt-get install sqlite3 libsqlite3-dev</code></br>
 <code>g++ dbcon.cpp -l sqlite3 -o main</code>
 
-<h4> To do:</h4>
-
-<ul>
-n.a
-</ul>
 
 
 AWS CLI to send data to S3 due to timeout via AWS GUI:</br>
@@ -55,3 +51,6 @@ To create a new virtual env: <code>virtualenv test-venv</code></br>
 -Enter in Jenkins' prompt: <code>sudo su - jenkins</code></br>
 -Active the virtual env used by the pipeline: <code>source /var/lib/jenkins/virtualenvs/test-env/bin/activate</code></br>
 -Pip install
+
+
+How to
