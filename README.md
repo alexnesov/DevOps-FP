@@ -20,7 +20,16 @@ https://github.com/mrjbq7/ta-lib </br>
 <code>sudo apt-get install sqlite3 libsqlite3-dev</code></br>
 <code>g++ dbcon.cpp -l sqlite3 -o main</code>
 
+#### Docker
 
+Building the image:</br>
+<code>docker build -t gts .</code>
+</br>
+Running the image:</br>
+<code>docker run -e aws_db_endpoint='<DNS>' -e aws_db_pass='<password>' -e aws_db_user='<password>' -p 5000:5000 gts</code>
+
+
+### AWS & S3
 
 AWS CLI to send data to S3 due to timeout via AWS GUI:</br>
 <code>aws s3 cp marketdata_2017_01_01_DB_no_nan.csv s3://tords</code>
@@ -33,6 +42,8 @@ Sending the data directly from MySQL Workbench to aws RDS was too slow, so I dec
 Tried this after "broken pipe" error message:</br>
 <code>aws configure set default.s3.max_concurrent_requests 20</code></br>
 <code>sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1</code>
+
+### Jenkins
 
 </br>
 <b>Memo of useful commands for DevOps on Ubuntu with Jenkins:</b></br>
