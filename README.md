@@ -63,5 +63,3 @@ To create a new virtual env: <code>virtualenv test-venv</code></br>
 -Active the virtual env used by the pipeline: <code>source /var/lib/jenkins/virtualenvs/test-env/bin/activate</code></br>
 -Pip install
 
-
-How to
