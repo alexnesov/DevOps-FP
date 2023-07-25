@@ -1,4 +1,4 @@
-# DevOps GTS
+# DevOps FP
 
 <h4>Principle to follow: DRY (do not repeat yourself)</h4>
 
