@@ -9,17 +9,6 @@
 </div>
 
 
-
-Useful links: </br>
-http://www.tadoc.org/index.htm </br>
-https://github.com/mrjbq7/ta-lib </br>
-
-
-
-<h5>Installing libraries for C++ sqlite3 connectivity:</h5>
-<code>sudo apt-get install sqlite3 libsqlite3-dev</code></br>
-<code>g++ dbcon.cpp -l sqlite3 -o main</code>
-
 #### Docker
 
 Building the image:</br>
