@@ -18,7 +18,7 @@ pipeline {
                     #!/bin/bash
                     . /var/lib/jenkins/virtualenvs/test-env/bin/activate
                     cd /home/ubuntu/eoddata
-                    . /home/ubuntu/.bashrc; python -u /home/ubuntu/eoddata/dataTransfer.py >> /home/ubuntu/eoddata/downloads/logs/eod.log
+                    . /home/ubuntu/.bashrc; python -u /home/ubuntu/eoddata/dataTransfer.py > /home/ubuntu/eoddata/downloads/logs/eod.log
                 '''
         }
     }
@@ -45,3 +45,4 @@ pipeline {
 
     }
 }
+

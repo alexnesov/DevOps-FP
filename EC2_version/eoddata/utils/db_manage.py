@@ -7,9 +7,7 @@ from sqlalchemy import create_engine
 import sqlalchemy as sa
 import functools
 import traceback
-
 import sqlite3
-from sqlite3 import Error
 
 
 class QuRetType(Enum):
@@ -38,8 +36,6 @@ class QuRetType(Enum):
     ALLASCSV = auto()   #all data written to some csv file
     ALLASXLS = auto()   #all data written to some xls file    
     
-
-
 
 
 class DBAccCM:
@@ -160,8 +156,6 @@ def dfToRDS(df, table, db_name, location='RDS'):
     finally:
         engine.dispose()
 
-            
-
 
 @functools.lru_cache(maxsize=1)
 def std_db_acc_obj():         
@@ -172,22 +166,10 @@ def std_db_acc_obj():
     return db_acc_obj      
 
 
-
-
-
-
-# NASDAQ_2020_11_01 limit 10
-# NYSE_2020_11_01 limit 10
-
-
-
-
 def getDataFromRDS():
     quer = "select * from NASDAQ_15 where date>'2020-10-01';"
     db_acc_obj = std_db_acc_obj()
     df = db_acc_obj.exc_query('marketdata', query=quer, retres=QuRetType.ALLASPD)
-
-
 
 
 # NASDAQ_2020_11_01

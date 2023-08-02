@@ -33,15 +33,6 @@ def getTwelveData():
     print(ts)
     return ts
 
-"""
-def getTodaySP():
-    print('1')
-    SPYToday = yf.download('^GSPC', threads= False, start=today, end=tomorrow)
-    print('2')
-    SPYToday = SPYToday.rename(columns = {'Adj Close':'AdjClose'}).reset_index()
-    
-    return SPYToday
-"""
 
 def sendToRDS(df):
     dfToRDS(df=df,table='sp500',db_name='marketdata',location='RDS')

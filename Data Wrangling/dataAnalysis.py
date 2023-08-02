@@ -51,11 +51,6 @@ class FindCommonStocks():
 
 
 
-def format():
-    newdyfinance = dfyfinance.dropna()
-    newdyfinance.to_csv('marketdata_2017_01_01_DB_no_nan.csv', header=False,index=False)
-
-
 if __name__ == "__main__":
     start = FindCommonStocks()
     start.loadLists()
