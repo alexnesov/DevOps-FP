@@ -8,7 +8,7 @@ from io import StringIO
 
 SE = ['NASDAQ', 'NYSE']
 
-def reconstruct():
+def reconstruct(path: str):
     # Read the data from the file
     with open("HisoricalData/NASDAQ/2020/NASDAQ_20200101.txt", "r") as file:
         data = file.read()
@@ -23,10 +23,22 @@ def reconstruct():
     print(df)
 
 
+
+
 if __name__ == '__main__':
     # reconstruct one year for NASDAQ
+    
+    # init
     df = reconstruct()
     print(df)
+    
+    # iterate and concatenate
+    
+    df_new = reconstruct()
+    dfQ = pd.concat([df, df_new], ignore_index=True)
+
+    
+
 
 
 
