@@ -1,18 +1,15 @@
-from twelvedata import TDClient  
-from db_manage import dfToRDS
+from utils.db_manage import dfToRDS
 from datetime import datetime, timedelta 
 import os
+import requests
+import pandas as pd
 today = str(datetime.today().strftime('%Y-%m-%d'))
-tomorrow = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
-
-
-#import twelvedata
+yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+tomorow = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 TWELVE_KEY = os.environ.get('twelve_key') 
-td = TDClient(apikey=TWELVE_KEY)  
+print(TWELVE_KEY)
 
-
-#SPX
 
 spColNames = {"datetime":"Date",
               "open":"Open",
@@ -21,26 +18,32 @@ spColNames = {"datetime":"Date",
               "close":"Close",
               "volume":"Volume"}
 
+def create_dataframe(data_list):
+    # Convert the list of dictionaries to a pandas DataFrame
+    df = pd.DataFrame(data_list)
 
-def getTwelveData():
-    ts = td.time_series(
-    symbol="SPX",
-    interval="1day",
-    start_date=today,
-    end_date=tomorrow
-    ).as_pandas().reset_index().rename(columns=spColNames)
+    # Convert string columns to numeric types (if needed)
+    df['open'] = pd.to_numeric(df['open'])
+    df['high'] = pd.to_numeric(df['high'])
+    df['low'] = pd.to_numeric(df['low'])
+    df['close'] = pd.to_numeric(df['close'])
+    df['volume'] = pd.to_numeric(df['volume'])
 
-    print(ts)
-    return ts
+    # Convert 'datetime' column to pandas datetime type
+    df['datetime'] = pd.to_datetime(df['datetime'])
 
-
-def sendToRDS(df):
-    dfToRDS(df=df,table='sp500',db_name='marketdata',location='RDS')
+    return df
 
 
 def main():
-    df = getTwelveData()
-    sendToRDS(df)
+    response = requests.get(f"https://api.twelvedata.com/time_series?apikey={TWELVE_KEY}&interval=1day&symbol=SPX&start_date={yesterday}&end_date={today}&format=JSON&type=index")
+    values = response.json().values()
+    list_values = list(values)[1]
+    df = create_dataframe(list_values).rename(columns=spColNames)
+
+    return df
+
 
 if __name__ == "__main__":
-    main()
+    df = main()
+    dfToRDS(df=df, table='sp500', db_name='marketdata')
