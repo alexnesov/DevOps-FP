@@ -7,9 +7,7 @@ from sqlalchemy import create_engine
 import sqlalchemy as sa
 import functools
 import traceback
-
 import sqlite3
-from sqlite3 import Error
 
 
 class QuRetType(Enum):
@@ -38,8 +36,6 @@ class QuRetType(Enum):
     ALLASCSV = auto()   #all data written to some csv file
     ALLASXLS = auto()   #all data written to some xls file    
     
-
-
 
 
 class DBAccCM:
@@ -85,7 +81,6 @@ class DBManager:
         """
         opens a cursor, executes a query and returns the result depending on type
 
-
         :Param db_name: name of data base 
         :Param query: query to be executed
         :Param retres: return type (see :py:class:`db.db_manage.QuRetType`)
@@ -119,6 +114,10 @@ class DBManager:
         return ret
 
 
+import os
+import pandas as pd
+from sqlalchemy import create_engine
+
 def dfToRDS(df, table, db_name, location='RDS'):
     """
     For an unknown reason, didn't succeed to send df to RDS with connection method above.
@@ -134,34 +133,21 @@ def dfToRDS(df, table, db_name, location='RDS'):
     db_user = os.environ.get('aws_db_user')
     db_endp = os.environ.get('aws_db_endpoint')
     
-    if location=='RDS':
-        connection_url = sa.engine.url.URL(drivername="mysql+pymysql",
-                                    username=f"{db_user}",
-                                    password=f"{db_pass}",
-                                    host=f"{db_endp}",
-                                    database=f"{db_name}"
-                                    )
-    elif location=='local':         
-        connection_url = sa.engine.url.URL(drivername="mysql+pymysql",
-                                    username=f"root",
-                                    password=f"{db_pass}",
-                                    host=f"localhost",
-                                    database=f"{db_name}",
-                                    port=3306
-                                    )
+    if location == 'RDS':
+        connection_url = f"mysql+pymysql://{db_user}:{db_pass}@{db_endp}:3306/{db_name}"
+    elif location == 'local':
+        connection_url = f"mysql+pymysql://root:{db_pass}@localhost:3306/{db_name}"
                                    
     engine = create_engine(connection_url)
 
     try:
         with engine.connect() as connection:
-            df.to_sql(f'{table}', con=connection, if_exists='append',index=False)
+            df.to_sql(table, con=connection, if_exists='append', index=False)
     except Exception as e:
         print(f"{traceback.format_exc()}")
         raise RuntimeError('Connection could not be established.')
     finally:
         engine.dispose()
-
-            
 
 
 @functools.lru_cache(maxsize=1)
@@ -173,22 +159,10 @@ def std_db_acc_obj():
     return db_acc_obj      
 
 
-
-
-
-
-# NASDAQ_2020_11_01 limit 10
-# NYSE_2020_11_01 limit 10
-
-
-
-
 def getDataFromRDS():
     quer = "select * from NASDAQ_15 where date>'2020-10-01';"
     db_acc_obj = std_db_acc_obj()
     df = db_acc_obj.exc_query('marketdata', query=quer, retres=QuRetType.ALLASPD)
-
-
 
 
 # NASDAQ_2020_11_01
@@ -212,21 +186,6 @@ def createTable(dbname='marketdataSQL.db'):
     conn.close()
 
 
-def dfToSqlite(df, tableName, path='utils/marketdataSQL.db'):
-    """
-    Df to sqlite3 local DB
-
-    :param 1: dataframe to send to sqlite DB
-    :param 2: target table name in sqlite
-    :param 3: path to salite db
-    """
-    conn = sqlite3.connect('utils/marketdataSQL.db')
-    c = conn.cursor()
-    df.to_sql('NASDAQ_2020_10_01', conn, if_exists='append',index=False)
-    
-    conn.commit()
-    conn.close()
-
 
 def listTables():
     conn = sqlite3.connect('utils/marketdataSQL.db')
@@ -237,7 +196,9 @@ def listTables():
     conn.close()
 
 
-   
+
+
+
 
 
 

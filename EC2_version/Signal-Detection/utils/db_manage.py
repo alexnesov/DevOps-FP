@@ -186,6 +186,7 @@ def createTable(dbname='marketdataSQL.db'):
     conn.close()
 
 
+
 def listTables():
     conn = sqlite3.connect('utils/marketdataSQL.db')
     c = conn.cursor()
@@ -193,3 +194,11 @@ def listTables():
     print(c.fetchall())
 
     conn.close()
+
+
+
+
+
+
+
+
