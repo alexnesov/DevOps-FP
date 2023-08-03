@@ -6,12 +6,12 @@ import talib
 import numpy as np
 from datetime import datetime, timedelta 
 from time import gmtime, strftime
-from csv import writer
 import os
 from utils.db_manage import QuRetType, dfToRDS, std_db_acc_obj
 import sys
 sys.stdout.flush()
 
+PATH_SIG_DETECTION = "/home/ubuntu/Signal-Detection"
 
 #today = str(datetime.today().strftime('%Y-%m-%d'))
 today = datetime.today()
@@ -30,6 +30,7 @@ ValidPeriodStart = (today - timedelta(days=NDaysValidationPeriod)).strftime('%Y-
 NScanDaysInterval = 2
 start_date = today - timedelta(days=NScanDaysInterval)
 end_date = f'{today}'
+
 
 # file that is going to contain valid symbols
 file_name = (f'{currentDirectory}/validsymbol_{today_str}.csv') # Ubuntu
@@ -136,7 +137,7 @@ quRenameTable = "ALTER TABLE signals.Signals_aroon_crossing_copy\
 
 
 def csvToRDS():
-    df = pd.read_csv(f'utils/batch_{today_str}.csv')
+    df = pd.read_csv(f'{PATH_SIG_DETECTION}/utils/batch_{today_str}.csv')
     # dataFrame.iloc[<ROWS INDEX RANGE> , <COLUMNS INDEX RANGE>]
     df = df.iloc[:,1::]
 
@@ -145,30 +146,38 @@ def csvToRDS():
     db_acc_obj.exc_query(db_name='signals', query=quDeletePreviousTable)
     db_acc_obj.exc_query(db_name='signals', query=quRenameTable)
 
-
 def main():
-    import sys
+    INIT = True
+
     stockexchanges = ['NASDAQ','NYSE']
 
     remainingNStock = 0
     for SE in stockexchanges:
-        lenSE = len(pd.read_csv(f'utils/{SE}_list.csv'))
+        lenSE = len(pd.read_csv(f'{PATH_SIG_DETECTION}/utils/{SE}_list.csv'))
         remainingNStock += lenSE
     batch500 = remainingNStock - 500
 
-
     for SE in stockexchanges:
-        dftickers = pd.read_csv(f'utils/{SE}_list.csv')
-        tickers = dftickers[dftickers.columns[0]].tolist()
-        
+        dftickers = pd.read_csv(f'{PATH_SIG_DETECTION}/utils/{SE}_list.csv')
+        tickers = dftickers["Symbol"].tolist()
+
+        print()
+        print("tickers: ")
+        print(tickers)
+
         qu = f"SELECT * FROM {SE}_15 WHERE DATE > '{ValidPeriodStart}'"
         print(f'Querying data for : {SE}. . .')
         initialDF = db_acc_obj.exc_query(db_name='marketdata', query=qu, \
         retres=QuRetType.ALLASPD)
         print('Starting TA. . .')
 
+        if INIT:
+            initialDF.to_csv("test.csv")
+            INIT = False
+
         for tick in tickers:
-            if '-' in tick:
+            tick = str(tick)
+            if "-" in tick:
                 continue
 
             remainingNStock -= 1
@@ -185,7 +194,7 @@ def main():
                 pass
 
         tocsvDF = pd.DataFrame.from_dict(validSymbols)
-        tocsvDF.to_csv(f'utils/batch_{today_str}.csv')
+        tocsvDF.to_csv(f'{PATH_SIG_DETECTION}/utils/batch_{today_str}.csv')
 
     print('TA successfully accomplished.')
     print('Sending data to RDS. . .')
