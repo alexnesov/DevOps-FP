@@ -8,6 +8,9 @@ api_key     = os.getenv('iexcloudKey')
 
 
 def main():
+    """
+    Yesterday, to be triggered in the morning for previous EOD
+    """
     json_market_data_previous = requests.get(f'https://cloud.iexapis.com/stable/stock/market/previous?token={api_key}').json()
     print('json_market_data_previous: ', json_market_data_previous)
 
