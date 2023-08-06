@@ -1,10 +1,8 @@
 import pandas as pd
-import numpy as np
 import os
 import pymysql
 from enum import Enum, auto
 from sqlalchemy import create_engine
-import sqlalchemy as sa
 import functools
 import traceback
 import sqlite3

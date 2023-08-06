@@ -2,8 +2,10 @@ import pandas as pd
 import yfinance as yf
 import pymysql
 import os
-from datetime import datetime, timedelta 
+from datetime import datetime 
 import time
+from typing import List
+
 # pass by reference best practices
 
 currentDirectory = os.getcwd() # Ubuntu
@@ -23,76 +25,81 @@ wait_secs = 5
 currentGlobalTick = listOfTicks[0]
 
 
-class getData():
+class getDataYfinance():
     """
-    Pulling data from yfinance, in batches, to avoid IP blocking
+    A class for pulling data from yfinance in batches to avoid IP blocking.
     """
 
-    def __init__(self,batch_size, wait_secs, init_csv=True):
+    def __init__(self, batch_size: int, wait_secs: int, init_csv: bool = True):
+        """
+        Initialize the getDataYfinance object.
 
-        # If init_csv to "True" it will overwrite csw, otherwise it will append new data
+        Parameters:
+            batch_size (int): The size of each batch for API requests.
+            wait_secs (int): The number of seconds to wait after each batch of API requests.
+            init_csv (bool, optional): If True, it will overwrite the CSV file with new data.
+                                       If False, it will append new data to the existing CSV file.
+        """
         self.init_csv = init_csv
         self.batch_init = True
         self.previous_limit = batch_size
         self.counter = 0
         self.batch_size = batch_size
-        # batch is going to be a list of stocks
-        self.batch = []
+        self.batch: List[str] = []
         self.wait_secs = wait_secs
 
     def csvAppend(self, df):
         """
-        appends df corresponding to each stock to a final csv, that is then going to be send to RDS
-        """
+        Append DataFrame corresponding to each stock to a final CSV file,
+        which will then be sent to RDS.
 
-        if self.init_csv == True:
+        Parameters:
+            df: The DataFrame containing the stock data to be appended.
+        """
+        if self.init_csv:
             df.to_csv('./Historical/marketdata_2017_01_01_test.csv', index=False)
             self.init_csv = False
         else:
             df.to_csv('./Historical/marketdata_2017_01_01_test.csv', mode='a', index=False, header=False)
 
-
     def nextBatch(self):
         """
-        The objective to create batches of x API requests,
-        to not overload yfinance
+        Create batches of API requests to avoid overloading yfinance.
         """
-
-        if self.batch_init==True:
-            self.batch = listOfTicks[0:batch_size]
-            self.batch_init=False
+        if self.batch_init:
+            self.batch = listOfTicks[0:self.batch_size]
+            self.batch_init = False
         else:
-            self.batch =  listOfTicks[self.previous_limit:self.previous_limit+batch_size]
-            self.previous_limit = self.previous_limit + batch_size
+            self.batch = listOfTicks[self.previous_limit:self.previous_limit+self.batch_size]
+            self.previous_limit = self.previous_limit + self.batch_size
 
-
-    def DL(self):    
+    def DL(self):
         """
-        After x requests (par batch) we set a x seconds pause
+        Perform data download from yfinance in batches.
+
+        After each batch of requests, there will be a pause for the specified number of seconds.
         """
         global currentGlobalTick
 
-        self.nextBatch()       # Func
+        self.nextBatch()
 
         for tick in self.batch:
             print("Tick = " + tick + f" n:{self.counter}")
             try:
                 print(f"New https connection for {tick}")
-                df = yf.download(tick, start = "2017-01-01", end = f"{today}", period = "1d").reset_index()
+                df = yf.download(tick, start="2017-01-01", end=f"{today}", period="1d").reset_index()
                 df['ticker'] = tick
                 currentGlobalTick = tick
                 self.csvAppend(df)
                 self.counter += 1
             except KeyError:
                 print(f'Error for {tick}')
-                error.append(tick)
 
-        time.sleep(wait_secs)
-
+        time.sleep(self.wait_secs)
 
 
 if __name__ == "__main__":
-    pullData = getData(batch_size, wait_secs)
+    pullData = getDataYfinance(batch_size, wait_secs)
     while str(currentGlobalTick) != str(listOfTicks[-1:]):
         pullData.DL()
 
