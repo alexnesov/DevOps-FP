@@ -1,4 +1,4 @@
-ValidTick,SignalDate,ScanDate,NScanDaysInterval,PriceAtSignal,LastClosingPrice,PriceEvolution,Company,Sector,Industry,D_plus3,priceD_plus3,priceD_plus3_evol
+ValidTick,SignalDate,ScanDate,NScanDaysInterval,PriceAtSignal,LastClosingPrice,PriceEvolution,Company,Sector,Industry,D_plus3,priceD_3,priceD_3_evol
 EAI,2020-12-16,2021-01-23,45,26.18,22.13,-15.47,,,,2020-12-19,26.32,0.5348
 AZEK,2020-12-16,2021-01-23,45,38.44,31.2,-18.83,The AZEK Company Inc.,Industrials,Building Products & Equipment,2020-12-19,38.51,0.1821
 RMAX,2020-12-16,2021-01-23,45,37.42,19.45,-48.02,"RE/MAX Holdings, Inc.",Real Estate,Real Estate Services,2020-12-19,38.38,2.5655

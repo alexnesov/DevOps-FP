@@ -209,12 +209,11 @@ def transform_dataframe(df: pd.DataFrame):
     # Price at D+N_DAYS_INTERVAL
     df_filtered_date[f'D_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(add_days,  args=(N_DAYS_INTERVAL,), axis=1)
     provider = Quote()
-    df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(provider.get_price_from_apply, axis=1)
+    df_filtered_date[f'priceD_{N_DAYS_INTERVAL}'] = df_filtered_date.apply(provider.get_price_from_apply, axis=1)
     log_message(f"The last business day will be {n_last_bd} and not {n_last_bd} (vacation)")
-    df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}_evol'] = df_filtered_date.apply(calc_price_evol,  args=("PriceAtSignal",f"priceD_plus{N_DAYS_INTERVAL}",), axis=1)
+    df_filtered_date[f'priceD_{N_DAYS_INTERVAL}_evol'] = df_filtered_date.apply(calc_price_evol,  args=("PriceAtSignal",f"priceD_{N_DAYS_INTERVAL}",), axis=1)
     ### Excluding penny stocks:
     df_filtered_penny = df_filtered_date[df_filtered_date['PriceAtSignal'] >= 20]
-
 
     return df_filtered_penny
 
@@ -222,10 +221,10 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame) -> None:
 
 
     ##### Plot the distribution of "priceD_plus{N_DAYS_INTERVAL}_evol"
-    plt.hist(df_filtered_penny[f"priceD_plus{N_DAYS_INTERVAL}_evol"], bins=50)
+    plt.hist(df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"], bins=50)
 
     # Calculate the mean of "priceD_plus{N_DAYS_INTERVAL}_evol"
-    mean_val = df_filtered_penny[f"priceD_plus{N_DAYS_INTERVAL}_evol"].mean()
+    mean_val = df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"].mean()
     log_message(f"The average return is {mean_val}% between {START_DATE_STR} and {n_last_bd}")
 
     # Add a vertical line for the mean
@@ -234,7 +233,7 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame) -> None:
     # Add labels and title
     plt.xlabel("Returns")
     plt.ylabel("Frequency")
-    plt.title(f"Distribution of Returns (priceD_plus{N_DAYS_INTERVAL}_evol)")
+    plt.title(f"Distribution of Returns (priceD_{N_DAYS_INTERVAL}_evol)")
     plt.legend()
 
     # Show the plot
