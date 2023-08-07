@@ -135,6 +135,7 @@ if __name__ == '__main__':
     ORDER BY SignalDate DESC;"
 
     df = get_data(qu)
+    print(df)
     df['SignalDate'] = pd.to_datetime(df['SignalDate'])
     df_filtered_date = df[df["SignalDate"]==start_date]
 

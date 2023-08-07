@@ -35,7 +35,6 @@ class QuRetType(Enum):
     ALLASXLS = auto()   #all data written to some xls file    
     
 
-
 class DBAccCM:
     """
     Context manager to deal with db connection
@@ -65,7 +64,9 @@ class DBAccCM:
 class DBManager:
 
     def __init__(self):
-        pass
+        self.db_pass = os.environ.get('aws_db_pass')
+        self.db_user = os.environ.get('aws_db_user')
+        self.db_endp = os.environ.get('aws_db_endpoint')
 
     def connection(self, dbname):
         """
@@ -73,9 +74,9 @@ class DBManager:
         """
         conCM = DBAccCM(dbname)
         return conCM
+    
 
-
-    def exc_query(self, db_name, query, retres = QuRetType.NONE, outpfile = None):
+    def exc_query(self, db_name, query, retres=QuRetType.NONE, outpfile=None):
         """
         opens a cursor, executes a query and returns the result depending on type
 
@@ -92,9 +93,9 @@ class DBManager:
             ret = None
             with self.connection(db_name) as conn:
 
-                if retres is QuRetType.ALLASPD or \
-                    retres is QuRetType.ALLASCSV:
-                    ret = pd.read_sql(query, conn)
+                if retres is QuRetType.ALLASPD or retres is QuRetType.ALLASCSV:
+                    engine = create_engine(f"mysql+pymysql://{self.db_user}:{self.db_pass}@{self.db_endp}/{db_name}")
+                    ret = pd.read_sql(query, engine)
                 else:
                     c = conn.cursor()
                     c.execute(query)
@@ -107,14 +108,32 @@ class DBManager:
                         pass
 
         except Exception as e:
-            print("An error occured during the query execution.")
+            print("An error occurred during the query execution.")
             print(f"{traceback.format_exc()}")
         return ret
 
 
-import os
-import pandas as pd
-from sqlalchemy import create_engine
+
+
+
+@functools.lru_cache(maxsize=1)
+def std_db_acc_obj():         
+    """                                                             
+    Creates the standard data base access object (see: :py:class:`DBManager`)
+    """
+    db_acc_obj = DBManager()     
+    return db_acc_obj      
+
+
+
+
+
+
+def getDataFromRDS():
+    quer = "select * from NASDAQ_15 where date>'2020-10-01';"
+    db_acc_obj = std_db_acc_obj()
+    df = db_acc_obj.exc_query('marketdata', query=quer, retres=QuRetType.ALLASPD)
+
 
 def dfToRDS(df, table, db_name, location='RDS'):
     """
@@ -148,22 +167,10 @@ def dfToRDS(df, table, db_name, location='RDS'):
         engine.dispose()
 
 
-@functools.lru_cache(maxsize=1)
-def std_db_acc_obj():         
-    """                                                             
-    Creates the standard data base access object (see: :py:class:`DBManager`)
-    """
-    db_acc_obj = DBManager()     
-    return db_acc_obj      
 
 
-def getDataFromRDS():
-    quer = "select * from NASDAQ_15 where date>'2020-10-01';"
-    db_acc_obj = std_db_acc_obj()
-    df = db_acc_obj.exc_query('marketdata', query=quer, retres=QuRetType.ALLASPD)
 
 
-# NASDAQ_2020_11_01
 dbname='utils/marketdataSQL.db'
 def createTable(dbname='marketdataSQL.db'):
     """

@@ -28,7 +28,7 @@ ValidPeriodStart            = (today - timedelta(days=NDaysValidationPeriod)).st
 
 
 # start_date and end_date are used to set the time interval that in which a signal is going to be searched
-NScanDaysInterval           = 5
+NScanDaysInterval           = 2
 START_DATE                  = today - timedelta(days=NScanDaysInterval)
 END_DATE                    = f'{today}'
 
