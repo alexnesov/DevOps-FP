@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import yfinance as yf
 
 
-N_DAYS_INTERVAL     = 4
+N_DAYS_INTERVAL     = 3
 START_DATE_STR      = "2020-12-16"
 n_last_bd           = 0
 
@@ -167,22 +167,12 @@ def fetch_sp500_data_evol(start_date, end_date):
     data = sp500.history(start=start_date, end=end_date)
     return round((data.tail(1)["Close"].values[0] - data.head(1)["Close"].values[0]) / data.head(1)["Close"].values[0] * 100,2) 
 
+
 def add_days(row, n_days: int):
     return row['SignalDate'] + timedelta(days=N_DAYS_INTERVAL)
 
-if __name__ == '__main__':
-    start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
-    end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
 
-    # test = fetch_sp500_data(START_DATE_STR, end_date.strftime('%Y-%m-%d'))
-
-    # print("test: ", test)
-
-    log_message(f"Launching the simulation with real historical data...")
-    log_message(f"Choosen signal date is {START_DATE_STR}")
-    log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
-
-    db_acc_obj = std_db_acc_obj()
+def get_signals():
     qu = "SELECT * FROM\
         (SELECT Signals_aroon_crossing_evol.*, sectors.Company, sectors.Sector, sectors.Industry  \
         FROM signals.Signals_aroon_crossing_evol\
@@ -191,14 +181,27 @@ if __name__ == '__main__':
         )t\
     WHERE SignalDate>'2020-12-15' \
     ORDER BY SignalDate DESC;"
-
     # all signals since beginning
-    df = get_data(qu)
+    df_signals = get_data(qu)
+    df_signals['SignalDate'] = pd.to_datetime(df_signals['SignalDate'])
 
+    return df_signals
+
+
+def transform_dataframe(df: pd.DataFrame):
+    """
+    Transform involves:
+        - Adding Dates
+        - Addings prices that are linked to dates
+        - Cleaning:
+            - Stocks that are not in the start_date
+            - Stocks that contain "-" (not stocks, but REIT's or preferred stocks)
+            - Stock that are penny
+    """
     # Signals since start date decided by the agent
-    df['SignalDate'] = pd.to_datetime(df['SignalDate'])
     # Filter rows where 'SignalDate' is equal to 'start_date'
-    df_filtered_date = df[df["SignalDate"]==start_date]
+    df_filtered_date = df_signals[df_signals["SignalDate"]==start_date]
+    print(df_filtered_date)
     # Exclude rows where 'ScanDate' contains the '-' character
     df_filtered_date = df_filtered_date[~df_filtered_date["ValidTick"].str.contains("-")]
     print(df_filtered_date)
@@ -207,15 +210,34 @@ if __name__ == '__main__':
     df_filtered_date[f'D_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(add_days,  args=(N_DAYS_INTERVAL,), axis=1)
     provider = Quote()
     df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(provider.get_price_from_apply, axis=1)
-    log_message(f"The last business day will be {n_last_bd} and not {end_date} (vacation)")
+    log_message(f"The last business day will be {n_last_bd} and not {n_last_bd} (vacation)")
     df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}_evol'] = df_filtered_date.apply(calc_price_evol,  args=("PriceAtSignal",f"priceD_plus{N_DAYS_INTERVAL}",), axis=1)
     ### Excluding penny stocks:
     df_filtered_penny = df_filtered_date[df_filtered_date['PriceAtSignal'] >= 20]
 
+
+    return df_filtered_penny
+
+if __name__ == '__main__':
+    db_acc_obj = std_db_acc_obj()
+    start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
+    end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
+    # test = fetch_sp500_data(START_DATE_STR, end_date.strftime('%Y-%m-%d'))
+    # print("test: ", test)
+    log_message(f"Launching the simulation with real historical data...")
+    log_message(f"Choosen signal date is {START_DATE_STR}")
+    log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
+
+    df_signals = get_signals()
+    df_filtered_penny = format_dataframe(df_signals)
+
     create_folder_if_not_exists(f"output/{START_DATE_STR}")
     file_name = f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.csv"
-    df_filtered_date.to_csv(file_name, index=False)
-    df_filtered_date = pd.read_csv(file_name)
+    df_filtered_penny.to_csv(file_name, index=False)
+    
+    file_name = f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.csv"  
+    df_filtered_penny = pd.read_csv(file_name)
+    print(df_filtered_penny)
 
 
     ##### Plot the distribution of "priceD_plus{N_DAYS_INTERVAL}_evol"
@@ -223,6 +245,7 @@ if __name__ == '__main__':
 
     # Calculate the mean of "priceD_plus{N_DAYS_INTERVAL}_evol"
     mean_val = df_filtered_penny[f"priceD_plus{N_DAYS_INTERVAL}_evol"].mean()
+    log_message(f"The average return is {mean_val}% between {START_DATE_STR} and {n_last_bd}")
 
     # Add a vertical line for the mean
     plt.axvline(mean_val, color="red", linestyle="--", label=f"Mean: {round(mean_val,4 )}")
