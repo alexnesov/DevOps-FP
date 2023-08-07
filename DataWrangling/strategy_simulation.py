@@ -12,6 +12,7 @@ import yfinance as yf
 
 N_DAYS_INTERVAL     = 4
 START_DATE_STR      = "2020-12-16"
+n_last_bd           = 0
 
 cur_dir = os.getcwd()
 print("curr dir: ", cur_dir)
@@ -79,7 +80,8 @@ class Quote:
         """
         
         """
-
+        global n_last_bd
+        
         one_day = pd.Timedelta(days=1)
         print(f"No quote found for the following date: {self.date}. Certainly due to vacation. Incremeneting by 1 day...")
         self.date = self.date + one_day
@@ -90,6 +92,9 @@ class Quote:
         res = db_acc_obj.exc_query(db_name='marketdata', 
                                     query=qu,
                                     retres=QuRetType.ALLASPD)
+
+        n_last_bd = self.date
+
         return res['Close']
         
                
@@ -162,7 +167,8 @@ def fetch_sp500_data_evol(start_date, end_date):
     data = sp500.history(start=start_date, end=end_date)
     return round((data.tail(1)["Close"].values[0] - data.head(1)["Close"].values[0]) / data.head(1)["Close"].values[0] * 100,2) 
 
-
+def add_days(row, n_days: int):
+    return row['SignalDate'] + timedelta(days=N_DAYS_INTERVAL)
 
 if __name__ == '__main__':
     start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
@@ -190,51 +196,30 @@ if __name__ == '__main__':
 
     # Exclude rows where 'ScanDate' contains the '-' character
     filtered_df = df[~df["ValidTick"].str.contains("-")]
-
     filtered_df['SignalDate'] = pd.to_datetime(filtered_df['SignalDate'])
     # Filter rows where 'SignalDate' is equal to 'start_date'
     df_filtered_date = filtered_df[filtered_df["SignalDate"]==start_date]
-
     print(df_filtered_date)
-
-    provider = Quote()
-    res = provider.get_price("CYCN", "2021-01-23")
-
-    print(res)
 
     # Price at D+N_DAYS_INTERVAL
 
-    def add_days(row, n_days: int):
-        return row['SignalDate'] + timedelta(days=N_DAYS_INTERVAL)
+
 
     df_filtered_date[f'D_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(add_days,  args=(N_DAYS_INTERVAL,), axis=1)
-
+    provider = Quote()
     df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(provider.get_price_from_apply, axis=1)
-
+    log_message(f"The last business day will be {n_last_bd} and not {end_date} (vacation)")
     df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}_evol'] = df_filtered_date.apply(calc_price_evol,  args=("PriceAtSignal",f"priceD_plus{N_DAYS_INTERVAL}",), axis=1)
-
-    print(df_filtered_date)
-
-    create_folder_if_not_exists(f"output/{START_DATE_STR}")
-    df_filtered_date.to_csv(f"output/{START_DATE_STR}/df_filtered_date_{N_DAYS_INTERVAL}.csv", index=False)
-    
-
-    df_filtered_date = pd.read_csv(f"output/df_filtered_date_{N_DAYS_INTERVAL}.csv")
-
-    print("df_filtered_date: ")
-    print(df_filtered_date)
-
     ### Excluding penny stocks:
     df_filtered_penny = df_filtered_date[df_filtered_date['PriceAtSignal'] >= 20]
-    print("df_filtered_penny mean: ")
-    print(df_filtered_penny[f'priceD_plus{N_DAYS_INTERVAL}_evol'].mean())
+
+    create_folder_if_not_exists(f"output/{START_DATE_STR}")
+    file_name = f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.csv"
+    df_filtered_date.to_csv(file_name, index=False)
+    df_filtered_date = pd.read_csv(file_name)
 
 
-    print("df_filtered_penny: ")
-    print(df_filtered_penny)
-
-
-    # Plot the distribution of "priceD_plus{N_DAYS_INTERVAL}_evol"
+    ##### Plot the distribution of "priceD_plus{N_DAYS_INTERVAL}_evol"
     plt.hist(df_filtered_penny[f"priceD_plus{N_DAYS_INTERVAL}_evol"], bins=50)
 
     # Calculate the mean of "priceD_plus{N_DAYS_INTERVAL}_evol"
