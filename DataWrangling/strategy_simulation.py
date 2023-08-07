@@ -1,11 +1,17 @@
 from utils.db_manage import QuRetType, std_db_acc_obj
+from utils.logger import log_message
+from utils.file_mgmt import create_folder_if_not_exists
 import pandas as pd
 from datetime import datetime, timedelta 
 import random
 from typing import List
 import os
 import matplotlib.pyplot as plt
+import yfinance as yf
 
+
+N_DAYS_INTERVAL     = 4
+START_DATE_STR      = "2020-12-16"
 
 cur_dir = os.getcwd()
 print("curr dir: ", cur_dir)
@@ -66,7 +72,7 @@ class Quote:
         elif ticker in self.NYSE_LIST:
             return "NYSE"
         else:
-            print("Ticker not recognized. . . ")
+            log_message(f"{ticker} not recognized. . . ")
             return "NA"
 
     def quer_d_plus_1(self):
@@ -77,6 +83,8 @@ class Quote:
         one_day = pd.Timedelta(days=1)
         print(f"No quote found for the following date: {self.date}. Certainly due to vacation. Incremeneting by 1 day...")
         self.date = self.date + one_day
+
+        log_message(f"New business day {self.date}")
 
         qu = f'SELECT * FROM marketdata.{self.SE}_20 Where Symbol = "{self.ticker}" and Date = "{self.date}"'
         res = db_acc_obj.exc_query(db_name='marketdata', 
@@ -119,9 +127,9 @@ class Quote:
     def get_price_from_apply(self, row: pd.Series):
         
         try:
-            return self.get_price(row['ValidTick'], row['D_plus3'])
+            return self.get_price(row['ValidTick'], row[f'D_plus{N_DAYS_INTERVAL}'])
         except TypeError as e:
-            date_str = row['D_plus3'].strftime('%Y-%m-%d')
+            date_str = row[f'D_plus{N_DAYS_INTERVAL}'].strftime('%Y-%m-%d')
             return self.get_price(row['ValidTick'], date_str)
 
 
@@ -143,15 +151,30 @@ def calc_price_evol(row, col_start: str, col_end: str):
     # Calculate percentage change using pandas' `pct_change` method
     price_evol = (row[col_end] - row[col_start]) / row[col_start] * 100
 
-    return round(price_evol,2 )
+    return round(price_evol,4)
+
+
+
+def fetch_sp500_data_evol(start_date, end_date):
+    """
+    """
+    sp500 = yf.Ticker("^GSPC")
+    data = sp500.history(start=start_date, end=end_date)
+    return round((data.tail(1)["Close"].values[0] - data.head(1)["Close"].values[0]) / data.head(1)["Close"].values[0] * 100,2) 
+
 
 
 if __name__ == '__main__':
-    """
-    n_days_interval = 3 
-    start_date_str = "2020-12-16"
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-    end_date = start_date + timedelta(days=n_days_interval)
+    start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
+    end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
+
+    # test = fetch_sp500_data(START_DATE_STR, end_date.strftime('%Y-%m-%d'))
+
+    # print("test: ", test)
+
+    log_message(f"Launching the simulation with real historical data...")
+    log_message(f"Choosen signal date is {START_DATE_STR}")
+    log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
 
     db_acc_obj = std_db_acc_obj()
     qu = "SELECT * FROM\
@@ -164,34 +187,39 @@ if __name__ == '__main__':
     ORDER BY SignalDate DESC;"
 
     df = get_data(qu)
-    print(df)
-    df['SignalDate'] = pd.to_datetime(df['SignalDate'])
-    df_filtered_date = df[df["SignalDate"]==start_date]
 
+    # Exclude rows where 'ScanDate' contains the '-' character
+    filtered_df = df[~df["ValidTick"].str.contains("-")]
+
+    filtered_df['SignalDate'] = pd.to_datetime(filtered_df['SignalDate'])
+    # Filter rows where 'SignalDate' is equal to 'start_date'
+    df_filtered_date = filtered_df[filtered_df["SignalDate"]==start_date]
+
+    print(df_filtered_date)
 
     provider = Quote()
     res = provider.get_price("CYCN", "2021-01-23")
 
     print(res)
 
-
-    # Price at D+3
+    # Price at D+N_DAYS_INTERVAL
 
     def add_days(row, n_days: int):
-        return row['SignalDate'] + timedelta(days=n_days_interval)
+        return row['SignalDate'] + timedelta(days=N_DAYS_INTERVAL)
 
-    df_filtered_date['D_plus3'] = df_filtered_date.apply(add_days,  args=(3,), axis=1)
+    df_filtered_date[f'D_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(add_days,  args=(N_DAYS_INTERVAL,), axis=1)
 
-    df_filtered_date['priceD_plus3'] = df_filtered_date.apply(provider.get_price_from_apply, axis=1)
+    df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(provider.get_price_from_apply, axis=1)
 
-    df_filtered_date['priceD_plus3_evol'] = df_filtered_date.apply(calc_price_evol,  args=("PriceAtSignal","priceD_plus3",), axis=1)
+    df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}_evol'] = df_filtered_date.apply(calc_price_evol,  args=("PriceAtSignal",f"priceD_plus{N_DAYS_INTERVAL}",), axis=1)
 
     print(df_filtered_date)
-    df_filtered_date.to_csv("output/df_filtered_date.csv", index=False)
-    
-    """
 
-    df_filtered_date = pd.read_csv("output/df_filtered_date.csv")
+    create_folder_if_not_exists(f"output/{START_DATE_STR}")
+    df_filtered_date.to_csv(f"output/{START_DATE_STR}/df_filtered_date_{N_DAYS_INTERVAL}.csv", index=False)
+    
+
+    df_filtered_date = pd.read_csv(f"output/df_filtered_date_{N_DAYS_INTERVAL}.csv")
 
     print("df_filtered_date: ")
     print(df_filtered_date)
@@ -199,26 +227,26 @@ if __name__ == '__main__':
     ### Excluding penny stocks:
     df_filtered_penny = df_filtered_date[df_filtered_date['PriceAtSignal'] >= 20]
     print("df_filtered_penny mean: ")
-    print(df_filtered_penny['priceD_plus3_evol'].mean())
+    print(df_filtered_penny[f'priceD_plus{N_DAYS_INTERVAL}_evol'].mean())
 
 
     print("df_filtered_penny: ")
     print(df_filtered_penny)
 
 
-    # Plot the distribution of "priceD_plus3_evol"
-    plt.hist(df_filtered_penny["priceD_plus3_evol"], bins=10, edgecolor="black")
+    # Plot the distribution of "priceD_plus{N_DAYS_INTERVAL}_evol"
+    plt.hist(df_filtered_penny[f"priceD_plus{N_DAYS_INTERVAL}_evol"], bins=50)
 
-    # Calculate the mean of "priceD_plus3_evol"
-    mean_val = df_filtered_penny["priceD_plus3_evol"].mean()
+    # Calculate the mean of "priceD_plus{N_DAYS_INTERVAL}_evol"
+    mean_val = df_filtered_penny[f"priceD_plus{N_DAYS_INTERVAL}_evol"].mean()
 
     # Add a vertical line for the mean
-    plt.axvline(mean_val, color="red", linestyle="--", label=f"Mean: {mean_val:.2f}")
+    plt.axvline(mean_val, color="red", linestyle="--", label=f"Mean: {round(mean_val,4 )}")
 
     # Add labels and title
     plt.xlabel("Returns")
     plt.ylabel("Frequency")
-    plt.title("Distribution of Returns (priceD_plus3_evol)")
+    plt.title(f"Distribution of Returns (priceD_plus{N_DAYS_INTERVAL}_evol)")
     plt.legend()
 
     # Show the plot

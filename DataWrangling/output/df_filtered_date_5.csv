@@ -1,0 +1,13 @@
+ValidTick,SignalDate,ScanDate,NScanDaysInterval,PriceAtSignal,LastClosingPrice,PriceEvolution,Company,Sector,Industry,D_plus5,priceD_plus5,priceD_plus5_evol
+FRT-C,2020-12-16,2021-01-23,45,26.44,21.6,-18.31,,,,2020-12-21,26.46,0.08
+EAI,2020-12-16,2021-01-23,45,26.18,22.13,-15.47,,,,2020-12-21,26.32,0.53
+AZEK,2020-12-16,2021-01-23,45,38.44,31.2,-18.83,The AZEK Company Inc.,Industrials,Building Products & Equipment,2020-12-21,38.51,0.18
+KALA,2020-12-16,2021-01-23,45,7.57,14.12,86.53,"Kala Pharmaceuticals, Inc.",Healthcare,Biotechnology,2020-12-21,7.45,-1.59
+KDNY,2020-12-16,2021-01-23,45,19.2,40.28,109.79,"Chinook Therapeutics, Inc.",Healthcare,Biotechnology,2020-12-21,17.09,-10.99
+RMAX,2020-12-16,2021-01-23,45,37.42,19.45,-48.02,"RE/MAX Holdings, Inc.",Real Estate,Real Estate Services,2020-12-21,38.38,2.57
+TENX,2020-12-16,2021-01-23,45,1.05,0.29,-72.38,"Tenax Therapeutics, Inc.",Healthcare,Biotechnology,2020-12-21,1.03,-1.9
+AEFC,2020-12-16,2021-01-23,45,26.79,21.09,-21.28,,,,2020-12-21,26.81,0.07
+ADMA,2020-12-16,2021-01-23,45,2.06,4.05,96.6,"ADMA Biologics, Inc.",Healthcare,Biotechnology,2020-12-21,2.25,9.22
+AGRX,2020-12-16,2021-01-23,45,2.9,2.76,-4.83,"Agile Therapeutics, Inc.",Healthcare,Drug Manufacturers - Specialty & Generic,2020-12-21,2.93,1.03
+AMTI,2020-12-16,2021-01-23,45,32.14,0.3,-99.07,Applied Molecular Transport Inc.,Healthcare,Biotechnology,2020-12-21,33.89,5.44
+CYCN,2020-12-16,2021-01-23,45,3.15,3.33,5.71,"Cyclerion Therapeutics, Inc.",Healthcare,Biotechnology,2020-12-21,3.26,3.49
