@@ -192,19 +192,18 @@ if __name__ == '__main__':
     WHERE SignalDate>'2020-12-15' \
     ORDER BY SignalDate DESC;"
 
+    # all signals since beginning
     df = get_data(qu)
 
-    # Exclude rows where 'ScanDate' contains the '-' character
-    filtered_df = df[~df["ValidTick"].str.contains("-")]
-    filtered_df['SignalDate'] = pd.to_datetime(filtered_df['SignalDate'])
+    # Signals since start date decided by the agent
+    df['SignalDate'] = pd.to_datetime(df['SignalDate'])
     # Filter rows where 'SignalDate' is equal to 'start_date'
-    df_filtered_date = filtered_df[filtered_df["SignalDate"]==start_date]
+    df_filtered_date = df[df["SignalDate"]==start_date]
+    # Exclude rows where 'ScanDate' contains the '-' character
+    df_filtered_date = df_filtered_date[~df_filtered_date["ValidTick"].str.contains("-")]
     print(df_filtered_date)
 
     # Price at D+N_DAYS_INTERVAL
-
-
-
     df_filtered_date[f'D_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(add_days,  args=(N_DAYS_INTERVAL,), axis=1)
     provider = Quote()
     df_filtered_date[f'priceD_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(provider.get_price_from_apply, axis=1)

@@ -1,4 +1,9 @@
 HisoricalData/
+HisoricalData/*
+DataWrangling/HistoricalData/
+DataWrangling/HistoricalData/*
+
+output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
