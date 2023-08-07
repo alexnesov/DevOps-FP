@@ -217,8 +217,9 @@ def transform_dataframe(df: pd.DataFrame):
 
     return df_filtered_penny
 
-def plot_histogram_returns(df_filtered_penny: pd.DataFrame) -> None:
+def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> None:
 
+    plt.style.use('dark_background')
 
     ##### Plot the distribution of "priceD_plus{N_DAYS_INTERVAL}_evol"
     plt.hist(df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"], bins=50)
@@ -228,7 +229,8 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame) -> None:
     log_message(f"The average return is {mean_val}% between {START_DATE_STR} and {n_last_bd}")
 
     # Add a vertical line for the mean
-    plt.axvline(mean_val, color="red", linestyle="--", label=f"Mean: {round(mean_val,4 )}")
+    plt.axvline(mean_val, color="red", linestyle="--", label=f"Infocom's return: {round(mean_val,4 )} %")
+    plt.axvline(spevol, color="orange", linestyle="--", label=f"SP500 over same period: {spevol} %")
 
     # Add labels and title
     plt.xlabel("Returns")
@@ -253,6 +255,12 @@ if __name__ == '__main__':
     df_signals = get_signals()
     df_filtered_penny = transform_dataframe(df_signals)
 
+    log_message(START_DATE_STR)
+    log_message(n_last_bd)
+
+    sp500evol = fetch_sp500_data_evol(START_DATE_STR, n_last_bd)
+    df_filtered_penny['sp500vol'] = sp500evol
+
     create_folder_if_not_exists(f"output/{START_DATE_STR}")
     file_name = f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.csv"
     df_filtered_penny.to_csv(file_name, index=False)
@@ -261,4 +269,4 @@ if __name__ == '__main__':
     df_filtered_penny = pd.read_csv(file_name)
     print(df_filtered_penny)
 
-    plot_histogram_returns(df_filtered_penny)
+    plot_histogram_returns(df_filtered_penny, sp500evol)
