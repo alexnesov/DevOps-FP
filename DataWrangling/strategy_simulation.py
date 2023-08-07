@@ -218,26 +218,7 @@ def transform_dataframe(df: pd.DataFrame):
 
     return df_filtered_penny
 
-if __name__ == '__main__':
-    db_acc_obj = std_db_acc_obj()
-    start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
-    end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
-    # test = fetch_sp500_data(START_DATE_STR, end_date.strftime('%Y-%m-%d'))
-    # print("test: ", test)
-    log_message(f"Launching the simulation with real historical data...")
-    log_message(f"Choosen signal date is {START_DATE_STR}")
-    log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
-
-    df_signals = get_signals()
-    df_filtered_penny = format_dataframe(df_signals)
-
-    create_folder_if_not_exists(f"output/{START_DATE_STR}")
-    file_name = f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.csv"
-    df_filtered_penny.to_csv(file_name, index=False)
-    
-    file_name = f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.csv"  
-    df_filtered_penny = pd.read_csv(file_name)
-    print(df_filtered_penny)
+def plot_histogram_returns(df_filtered_penny: pd.DataFrame) -> None:
 
 
     ##### Plot the distribution of "priceD_plus{N_DAYS_INTERVAL}_evol"
@@ -258,3 +239,27 @@ if __name__ == '__main__':
 
     # Show the plot
     plt.show()
+    
+
+if __name__ == '__main__':
+    db_acc_obj = std_db_acc_obj()
+    start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
+    end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
+    # test = fetch_sp500_data(START_DATE_STR, end_date.strftime('%Y-%m-%d'))
+    # print("test: ", test)
+    log_message(f"Launching the simulation with real historical data...")
+    log_message(f"Choosen signal date is {START_DATE_STR}")
+    log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
+
+    df_signals = get_signals()
+    df_filtered_penny = transform_dataframe(df_signals)
+
+    create_folder_if_not_exists(f"output/{START_DATE_STR}")
+    file_name = f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.csv"
+    df_filtered_penny.to_csv(file_name, index=False)
+    
+    file_name = f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.csv"  
+    df_filtered_penny = pd.read_csv(file_name)
+    print(df_filtered_penny)
+
+    plot_histogram_returns(df_filtered_penny)
