@@ -271,14 +271,12 @@ def main(date: str):
 
 if __name__ == '__main__':
 
-    cache = CacheManager("output/curr_process.json")
+    db_acc_obj  = std_db_acc_obj()
+    cache       = CacheManager("output/curr_process.json")
     cache.reinitialize_cache()
 
-    db_acc_obj = std_db_acc_obj()
     start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
     end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
-    # test = fetch_sp500_data(START_DATE_STR, end_date.strftime('%Y-%m-%d'))
-    # print("test: ", test)
     log_message(f"Launching the simulation with real historical data...")
     log_message(f"Choosen signal date is {START_DATE_STR}")
     log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
@@ -287,12 +285,12 @@ if __name__ == '__main__':
     df_signals.to_csv("output/signals.csv")
 
     dates = filter_dates('2023-07-03', '2023-07-31', df_signals['SignalDate'].unique())
-    """
-
+    
+    import time
     for date in dates:
         print(date)
-    """
-
+        time.sleep(1)
+        cache.update_cache_field("start_date", str(date))
 
 
     df_filtered_penny = transform_dataframe(df_signals)

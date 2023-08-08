@@ -30,6 +30,30 @@ class CacheManager:
         log_message(f"Cache reinitialized. It can be found at: {self.cache_path}")
 
 
+    def update_cache_field(self, key, value):
+        """
+        """
+        with open(self.cache_path, 'r') as json_file:
+            data = json.load(json_file)
+
+        splitted = key.split(".")
+
+        if len(splitted) > 2:
+            raise ValueError("The caching system doesn't allow such a level of nesting (>2)")
+        elif len(splitted) > 1:
+            data[splitted[0]][splitted[1]] = value
+        else:
+            data[key] = value
+
+        with open(self.cache_path, 'w') as json_file:
+            json.dump(data, json_file, indent=4)
+
+
+    def get_cache_field(self, key):
+        """
+        """
+        pass
+
 
 def create_folder_if_not_exists(folder_path):
     if not os.path.exists(folder_path):
