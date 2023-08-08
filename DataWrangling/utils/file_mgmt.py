@@ -9,7 +9,9 @@ class CacheManager:
             "n_interval": 0,
             "start_date": "",
             "end_date": "",
-            "n_last_bd": 0
+            "n_last_bd": 0,
+            "return_ptf": 0,
+            "return_sp": 0
         }
 
         self.cache_path = cache_path
@@ -75,6 +77,15 @@ class CacheManager:
             return data[splitted[0]][splitted[1]]
         else:
             return data[key]
+    
+    def save(self, path: str):
+
+        with open(self.cache_path, 'r') as json_file:
+            data = json.load(json_file)
+
+        with open(path, 'w') as json_file:
+            json.dump(data, json_file, indent=4)
+
 
 
 def create_folder_if_not_exists(folder_path):

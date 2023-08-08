@@ -54,6 +54,9 @@ def SignalDetection(df: pd.DataFrame) -> pd.DataFrame:
     :returns: df with signals
     """
     try:
+
+        df.sort_values(by='Date', inplace=True)
+
         # Aroon
         aroonUP, aroonDOWN = aroon(df, Aroonval)
         

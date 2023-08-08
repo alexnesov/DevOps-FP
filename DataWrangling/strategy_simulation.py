@@ -93,12 +93,7 @@ class Quote:
                                     retres=QuRetType.ALLASPD)
 
 
-        print("self.date: ", self.date)
-        print(type(self.date))
         str_self_date = self.date.strftime("%Y-%m-%d")
-
-        print(type(str_self_date))
-        
         cache.update_cache_field("n_last_bd", str_self_date)
 
         return res['Close']
@@ -168,8 +163,10 @@ def fetch_sp500_data_evol(start_date: str, end_date: str):
     """
     sp500 = yf.Ticker("^GSPC")
     data = sp500.history(start=start_date, end=end_date)
+    ret = round((data.tail(1)["Close"].values[0] - data.head(1)["Close"].values[0]) / data.head(1)["Close"].values[0] * 100,2)
 
-    return round((data.tail(1)["Close"].values[0] - data.head(1)["Close"].values[0]) / data.head(1)["Close"].values[0] * 100,2) 
+    cache.update_cache_field("return_sp", ret)
+    return ret
 
 
 def add_days(row: pd.Series, n_days: int):
@@ -186,13 +183,13 @@ def get_signals():
     WHERE SignalDate>'2020-12-15' \
     ORDER BY SignalDate DESC;"
     # all signals since beginning
-    df_signals = get_data(qu)
-    df_signals['SignalDate'] = pd.to_datetime(df_signals['SignalDate'])
+    df = get_data(qu)
+    df['SignalDate'] = pd.to_datetime(df['SignalDate'])
 
-    return df_signals
+    return df
 
 
-def transform_dataframe(df: pd.DataFrame):
+def transform_dataframe() -> pd.DataFrame:
     """
     Transform involves:
         - Adding Dates
@@ -204,8 +201,7 @@ def transform_dataframe(df: pd.DataFrame):
     """
     # Signals since start date decided by the agent
     # Filter rows where 'SignalDate' is equal to 'start_date'
-    df_filtered_date = df_signals[df_signals["SignalDate"]==start_date]
-    print(df_filtered_date)
+    df_filtered_date = DF_SIGNALS[DF_SIGNALS["SignalDate"]==START_DATE]
     # Exclude rows where 'ScanDate' contains the '-' character
     df_filtered_date = df_filtered_date[~df_filtered_date["ValidTick"].str.contains("-")]
     print(df_filtered_date)
@@ -217,9 +213,9 @@ def transform_dataframe(df: pd.DataFrame):
     log_message(f"The last business day will be {cache.get_cache_field('n_last_bd')} and not {cache.get_cache_field('end_date')} (vacation)")
     df_filtered_date[f'priceD_{N_DAYS_INTERVAL}_evol'] = df_filtered_date.apply(calc_price_evol,  args=("PriceAtSignal",f"priceD_{N_DAYS_INTERVAL}",), axis=1)
     ### Excluding penny stocks:
-    df_filtered_penny = df_filtered_date[df_filtered_date['PriceAtSignal'] >= 20]
+    # df_filtered_penny = df_filtered_date[df_filtered_date['PriceAtSignal'] >= 20]
 
-    return df_filtered_penny
+    return df_filtered_date
 
 
 def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> None:
@@ -231,6 +227,7 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> No
 
     # Calculate the mean of "priceD_plus{N_DAYS_INTERVAL}_evol"
     mean_val = df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"].mean()
+    cache.update_cache_field("return_ptf", mean_val)
     log_message(f"The average return is {mean_val}% between {START_DATE_STR} and {cache.get_cache_field('n_last_bd')}")
 
     # Add a vertical line for the mean
@@ -240,11 +237,15 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> No
     # Add labels and title
     plt.xlabel("Returns")
     plt.ylabel("Frequency")
-    plt.title(f"Distribution of Returns (priceD_{N_DAYS_INTERVAL}_evol)")
+    plt.title(f"Distribution of Returns {START_DATE_STR} + {N_DAYS_INTERVAL} days")
     plt.legend()
 
+    # Save the plot to the specified file path
+    plt.savefig(f"output/{START_DATE_STR}/plot_signal{cache.get_cache_field('start_date')}_d_{cache.get_cache_field('n_interval')}")
+    plt.clf()  # Clear the current figure
+
     # Show the plot
-    plt.show()
+    # plt.show()
     
 
 def filter_dates(start_date: str, end_date: str, datetime_array):
@@ -268,8 +269,8 @@ def filter_dates(start_date: str, end_date: str, datetime_array):
     return filtered_dates
 
 
-def main(start_date: str):
-    df_filtered_penny = transform_dataframe(df_signals)
+def main():
+    df_filtered_penny = transform_dataframe()
 
     if cache.get_cache_field("n_last_bd") == 0: # if 0 means no vacation had been detected
         cache.update_cache_field("n_last_bd", cache.get_cache_field("end_date")) 
@@ -289,35 +290,27 @@ def main(start_date: str):
 
 
 if __name__ == '__main__':
-    N_DAYS_INTERVAL     = 3
-    START_DATE_STR      = "2020-12-16"
+    N_DAYS_INTERVAL     = 2
+    # START_DATE_STR      = "2020-12-16"
 
     global cache
     db_acc_obj  = std_db_acc_obj()
     cache       = CacheManager("output/curr_process.json")
     cache.reinitialize_cache()
-
+    DF_SIGNALS  = get_signals()
     cache.update_cache_field("n_interval", N_DAYS_INTERVAL)
-    start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
-    cache.update_cache_field("start_date", START_DATE_STR)
-    end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
-    end_date_string = end_date.strftime("%Y-%m-%d")
-    cache.update_cache_field("end_date", end_date_string)
 
-    log_message(f"Launching the simulation with real historical data...")
-    log_message(f"Choosen signal date is {START_DATE_STR}")
-    log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
+    dates = filter_dates('2023-07-03', '2023-07-31', DF_SIGNALS['SignalDate'].unique())
+    for START_DATE in dates:
+        START_DATE_STR = START_DATE.strftime('%Y-%m-%d')
+        cache.update_cache_field("start_date", START_DATE_STR)
+        end_date = START_DATE + timedelta(days=N_DAYS_INTERVAL)
+        end_date_string = end_date.strftime("%Y-%m-%d")
+        cache.update_cache_field("end_date", end_date_string)
 
-    df_signals = get_signals()
-    df_signals.to_csv("output/signals.csv")
-
-    dates = filter_dates('2023-07-03', '2023-07-31', df_signals['SignalDate'].unique())
-    
-    """"
-    for date in dates:
-        print(date)
-        cache.update_cache_field("start_date", str(date))
-    """
-
-    main(start_date)
+        log_message(f"Launching the simulation with real historical data...")
+        log_message(f"Choosen signal date is {START_DATE}")
+        log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
+        main()
+        cache.save(f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.json")
 
