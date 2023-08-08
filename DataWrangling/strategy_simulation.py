@@ -1,6 +1,8 @@
 from utils.db_manage import QuRetType, std_db_acc_obj
 from utils.logger import log_message
 from utils.file_mgmt import create_folder_if_not_exists
+from utils.file_mgmt import CacheManager
+
 import pandas as pd
 from datetime import datetime, timedelta 
 import random
@@ -9,10 +11,12 @@ import os
 import matplotlib.pyplot as plt
 import yfinance as yf
 
-
 N_DAYS_INTERVAL     = 3
-START_DATE_STR      = "2020-12-16"
-n_last_bd           = 0
+START_DATE_STR      = "2023-07-20"
+
+# "2020-12-16" WORKING
+# "2023-07-26" WORKING
+# "2023-07-20" WORKING
 
 cur_dir = os.getcwd()
 print("curr dir: ", cur_dir)
@@ -43,8 +47,6 @@ def pick_n_random_elements(input_list: List[str], n: int) -> List[str]:
     return random.sample(input_list, n)
 
 
-
-
 def get_data(qu: str) -> pd.DataFrame:
     """
     :param stockExchange: stock exchange (ex: NYSE or NASDAQ)
@@ -56,7 +58,7 @@ def get_data(qu: str) -> pd.DataFrame:
 
     return df
 
-
+n_last_bd = 0
 class Quote:
 
     def __init__(self) -> None:
@@ -138,8 +140,6 @@ class Quote:
             return self.get_price(row['ValidTick'], date_str)
 
 
-
-
 def calc_price_evol(row, col_start: str, col_end: str):
     """
     Calculate price evolution between two columns in a pandas DataFrame.
@@ -159,16 +159,17 @@ def calc_price_evol(row, col_start: str, col_end: str):
     return round(price_evol,4)
 
 
-
-def fetch_sp500_data_evol(start_date, end_date):
+def fetch_sp500_data_evol(start_date: str, end_date: str):
     """
     """
     sp500 = yf.Ticker("^GSPC")
     data = sp500.history(start=start_date, end=end_date)
+
+    log_message(data)
     return round((data.tail(1)["Close"].values[0] - data.head(1)["Close"].values[0]) / data.head(1)["Close"].values[0] * 100,2) 
 
 
-def add_days(row, n_days: int):
+def add_days(row: pd.Series, n_days: int):
     return row['SignalDate'] + timedelta(days=N_DAYS_INTERVAL)
 
 
@@ -217,6 +218,7 @@ def transform_dataframe(df: pd.DataFrame):
 
     return df_filtered_penny
 
+
 def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> None:
 
     plt.style.use('dark_background')
@@ -242,7 +244,36 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> No
     plt.show()
     
 
+def filter_dates(start_date: str, end_date: str, datetime_array):
+    """
+    Filters the datetime_array to return dates between start_date and end_date (inclusive).
+    
+    Parameters:
+    - start_date (str): The start date in the format 'YYYY-MM-DD'.
+    - end_date (str): The end date in the format 'YYYY-MM-DD'.
+    - datetime_array (list): List of datetime strings.
+    
+    Returns:
+    - List of datetime strings between start_date and end_date.
+    """
+
+    start_date = pd.Timestamp(start_date)
+    end_date = pd.Timestamp(end_date)
+
+    filtered_dates = [date for date in datetime_array if start_date <= date <= end_date]
+
+    return filtered_dates
+
+
+def main(date: str):
+    pass
+
+
 if __name__ == '__main__':
+
+    cache = CacheManager("output/curr_process.json")
+    cache.reinitialize_cache()
+
     db_acc_obj = std_db_acc_obj()
     start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
     end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
@@ -253,10 +284,21 @@ if __name__ == '__main__':
     log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
 
     df_signals = get_signals()
+    df_signals.to_csv("output/signals.csv")
+
+    dates = filter_dates('2023-07-03', '2023-07-31', df_signals['SignalDate'].unique())
+    """
+
+    for date in dates:
+        print(date)
+    """
+
+
+
     df_filtered_penny = transform_dataframe(df_signals)
 
-    log_message(START_DATE_STR)
-    log_message(n_last_bd)
+    if n_last_bd == 0: # if 0 means no vacation had been detected
+        n_last_bd = end_date
 
     sp500evol = fetch_sp500_data_evol(START_DATE_STR, n_last_bd)
     df_filtered_penny['sp500vol'] = sp500evol
@@ -269,4 +311,4 @@ if __name__ == '__main__':
     df_filtered_penny = pd.read_csv(file_name)
     print(df_filtered_penny)
 
-    plot_histogram_returns(df_filtered_penny, sp500evol)
+    plot_histogram_returns(df_filtered_penny, sp500evol)        
