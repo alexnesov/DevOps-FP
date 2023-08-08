@@ -11,8 +11,7 @@ import os
 import matplotlib.pyplot as plt
 import yfinance as yf
 
-N_DAYS_INTERVAL     = 3
-START_DATE_STR      = "2023-07-20"
+
 
 # "2020-12-16" WORKING
 # "2023-07-26" WORKING
@@ -58,7 +57,6 @@ def get_data(qu: str) -> pd.DataFrame:
 
     return df
 
-n_last_bd = 0
 class Quote:
 
     def __init__(self) -> None:
@@ -82,7 +80,6 @@ class Quote:
         """
         
         """
-        global n_last_bd
         
         one_day = pd.Timedelta(days=1)
         print(f"No quote found for the following date: {self.date}. Certainly due to vacation. Incremeneting by 1 day...")
@@ -95,7 +92,14 @@ class Quote:
                                     query=qu,
                                     retres=QuRetType.ALLASPD)
 
-        n_last_bd = self.date
+
+        print("self.date: ", self.date)
+        print(type(self.date))
+        str_self_date = self.date.strftime("%Y-%m-%d")
+
+        print(type(str_self_date))
+        
+        cache.update_cache_field("n_last_bd", str_self_date)
 
         return res['Close']
         
@@ -165,7 +169,6 @@ def fetch_sp500_data_evol(start_date: str, end_date: str):
     sp500 = yf.Ticker("^GSPC")
     data = sp500.history(start=start_date, end=end_date)
 
-    log_message(data)
     return round((data.tail(1)["Close"].values[0] - data.head(1)["Close"].values[0]) / data.head(1)["Close"].values[0] * 100,2) 
 
 
@@ -211,7 +214,7 @@ def transform_dataframe(df: pd.DataFrame):
     df_filtered_date[f'D_plus{N_DAYS_INTERVAL}'] = df_filtered_date.apply(add_days,  args=(N_DAYS_INTERVAL,), axis=1)
     provider = Quote()
     df_filtered_date[f'priceD_{N_DAYS_INTERVAL}'] = df_filtered_date.apply(provider.get_price_from_apply, axis=1)
-    log_message(f"The last business day will be {n_last_bd} and not {n_last_bd} (vacation)")
+    log_message(f"The last business day will be {cache.get_cache_field('n_last_bd')} and not {cache.get_cache_field('end_date')} (vacation)")
     df_filtered_date[f'priceD_{N_DAYS_INTERVAL}_evol'] = df_filtered_date.apply(calc_price_evol,  args=("PriceAtSignal",f"priceD_{N_DAYS_INTERVAL}",), axis=1)
     ### Excluding penny stocks:
     df_filtered_penny = df_filtered_date[df_filtered_date['PriceAtSignal'] >= 20]
@@ -228,7 +231,7 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> No
 
     # Calculate the mean of "priceD_plus{N_DAYS_INTERVAL}_evol"
     mean_val = df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"].mean()
-    log_message(f"The average return is {mean_val}% between {START_DATE_STR} and {n_last_bd}")
+    log_message(f"The average return is {mean_val}% between {START_DATE_STR} and {cache.get_cache_field('n_last_bd')}")
 
     # Add a vertical line for the mean
     plt.axvline(mean_val, color="red", linestyle="--", label=f"Infocom's return: {round(mean_val,4 )} %")
@@ -265,40 +268,13 @@ def filter_dates(start_date: str, end_date: str, datetime_array):
     return filtered_dates
 
 
-def main(date: str):
-    pass
-
-
-if __name__ == '__main__':
-
-    db_acc_obj  = std_db_acc_obj()
-    cache       = CacheManager("output/curr_process.json")
-    cache.reinitialize_cache()
-
-    start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
-    end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
-    log_message(f"Launching the simulation with real historical data...")
-    log_message(f"Choosen signal date is {START_DATE_STR}")
-    log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
-
-    df_signals = get_signals()
-    df_signals.to_csv("output/signals.csv")
-
-    dates = filter_dates('2023-07-03', '2023-07-31', df_signals['SignalDate'].unique())
-    
-    import time
-    for date in dates:
-        print(date)
-        time.sleep(1)
-        cache.update_cache_field("start_date", str(date))
-
-
+def main(start_date: str):
     df_filtered_penny = transform_dataframe(df_signals)
 
-    if n_last_bd == 0: # if 0 means no vacation had been detected
-        n_last_bd = end_date
+    if cache.get_cache_field("n_last_bd") == 0: # if 0 means no vacation had been detected
+        cache.update_cache_field("n_last_bd", cache.get_cache_field("end_date")) 
 
-    sp500evol = fetch_sp500_data_evol(START_DATE_STR, n_last_bd)
+    sp500evol = fetch_sp500_data_evol(START_DATE_STR, cache.get_cache_field("n_last_bd"))
     df_filtered_penny['sp500vol'] = sp500evol
 
     create_folder_if_not_exists(f"output/{START_DATE_STR}")
@@ -310,3 +286,38 @@ if __name__ == '__main__':
     print(df_filtered_penny)
 
     plot_histogram_returns(df_filtered_penny, sp500evol)        
+
+
+if __name__ == '__main__':
+    N_DAYS_INTERVAL     = 3
+    START_DATE_STR      = "2020-12-16"
+
+    global cache
+    db_acc_obj  = std_db_acc_obj()
+    cache       = CacheManager("output/curr_process.json")
+    cache.reinitialize_cache()
+
+    cache.update_cache_field("n_interval", N_DAYS_INTERVAL)
+    start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
+    cache.update_cache_field("start_date", START_DATE_STR)
+    end_date = start_date + timedelta(days=N_DAYS_INTERVAL)
+    end_date_string = end_date.strftime("%Y-%m-%d")
+    cache.update_cache_field("end_date", end_date_string)
+
+    log_message(f"Launching the simulation with real historical data...")
+    log_message(f"Choosen signal date is {START_DATE_STR}")
+    log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
+
+    df_signals = get_signals()
+    df_signals.to_csv("output/signals.csv")
+
+    dates = filter_dates('2023-07-03', '2023-07-31', df_signals['SignalDate'].unique())
+    
+    """"
+    for date in dates:
+        print(date)
+        cache.update_cache_field("start_date", str(date))
+    """
+
+    main(start_date)
+
