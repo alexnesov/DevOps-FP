@@ -46,34 +46,45 @@ if __name__ == '__main__':
             ret_sp  = json_data['return_sp']
             empty_df = empty_df._append({'sp500Evol': ret_sp, 'ptfEvol': ret_ptf}, ignore_index=True)
 
-        
 
-    print(empty_df)
-    print(empty_df['ptfEvol'].mean())
-
+    from scipy.stats import gaussian_kde
+    import numpy as np
 
     # Create a histogram
     plt.style.use('dark_background')
+
     # Create a larger figure
     plt.figure(figsize=(10, 6))
 
-    # Create a histogram
-    plt.hist(empty_df['sp500Evol'], bins=15, alpha=0.5, label='sp500Evol')
-    plt.hist(empty_df['ptfEvol'], bins=15, alpha=0.5, label='ptfEvol')
+    # Data for the distributions (replace this with your actual data)
+    sp500Evol_data = empty_df['sp500Evol']
+    ptfEvol_data = empty_df['ptfEvol']
+
+    # Create histograms
+    plt.hist(sp500Evol_data, bins=15, alpha=0.5, density=True, label='sp500Evol')
+    plt.hist(ptfEvol_data, bins=15, alpha=0.5, density=True, label='ptfEvol')
     plt.xlabel('Evol')
     plt.ylabel('Frequency')
     plt.title('Comparison of sp500Evol and ptfEvol')
     plt.legend()
 
     # Calculate and add mean lines
-    mean_sp500 = empty_df['sp500Evol'].mean()
-    mean_ptf = empty_df['ptfEvol'].mean()
+    mean_sp500 = sp500Evol_data.mean()
+    mean_ptf = ptfEvol_data.mean()
     plt.axvline(mean_sp500, color='red', linestyle='dashed', linewidth=1, label='Mean sp500Evol')
     plt.axvline(mean_ptf, color='green', linestyle='dashed', linewidth=1, label='Mean ptfEvol')
-    
+
     # Annotate mean values
-    plt.text(mean_sp500, 5, f'Mean: {mean_sp500:.2f}', color='red', fontsize=10, ha='center')
-    plt.text(mean_ptf, 5, f'Mean: {mean_ptf:.2f}', color='green', fontsize=10, ha='center')
+    plt.text(mean_sp500, 0.05, f'Mean: {mean_sp500:.2f}', color='red', fontsize=10, ha='center')
+    plt.text(mean_ptf, 0.05, f'Mean: {mean_ptf:.2f}', color='green', fontsize=10, ha='center')
+
+    # Density plots
+    sp500Evol_kde = gaussian_kde(sp500Evol_data)
+    ptfEvol_kde = gaussian_kde(ptfEvol_data)
+
+    x_vals = np.linspace(min(min(sp500Evol_data), min(ptfEvol_data)), max(max(sp500Evol_data), max(ptfEvol_data)), 100)
+    plt.plot(x_vals, sp500Evol_kde(x_vals), color='red', label='sp500Evol Density')
+    plt.plot(x_vals, ptfEvol_kde(x_vals), color='green', label='ptfEvol Density')
 
     # Show the plot
     plt.legend()
