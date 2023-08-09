@@ -2,8 +2,9 @@ import os
 import fnmatch
 import pandas as pd
 import json
+import numpy as np
 import matplotlib.pyplot as plt
-
+from scipy.stats import gaussian_kde, skew, kurtosis
 
 def find_folders_with_name(root_dir, target_name):
     matching_folders = []
@@ -47,8 +48,6 @@ if __name__ == '__main__':
             empty_df = empty_df._append({'sp500Evol': ret_sp, 'ptfEvol': ret_ptf}, ignore_index=True)
 
 
-    from scipy.stats import gaussian_kde
-    import numpy as np
 
     # Create a histogram
     plt.style.use('dark_background')
@@ -85,6 +84,19 @@ if __name__ == '__main__':
     x_vals = np.linspace(min(min(sp500Evol_data), min(ptfEvol_data)), max(max(sp500Evol_data), max(ptfEvol_data)), 100)
     plt.plot(x_vals, sp500Evol_kde(x_vals), color='red', label='sp500Evol Density')
     plt.plot(x_vals, ptfEvol_kde(x_vals), color='green', label='ptfEvol Density')
+
+
+    # Calculate and annotate skewness and kurtosis
+    sp500_skew = skew(sp500Evol_data)
+    sp500_kurt = kurtosis(sp500Evol_data)
+    ptf_skew = skew(ptfEvol_data)
+    ptf_kurt = kurtosis(ptfEvol_data)
+
+    plt.text(0.23, 0.9, f'Skew (sp500Evol): {sp500_skew:.2f}', color='red', fontsize=10, transform=plt.gca().transAxes, ha='right')
+    plt.text(0.23, 0.85, f'Kurtosis (sp500Evol): {sp500_kurt:.2f}', color='red', fontsize=10, transform=plt.gca().transAxes, ha='right')
+    plt.text(0.23, 0.8, f'Skew (ptfEvol): {ptf_skew:.2f}', color='green', fontsize=10, transform=plt.gca().transAxes, ha='right')
+    plt.text(0.23, 0.75, f'Kurtosis (ptfEvol): {ptf_kurt:.2f}', color='green', fontsize=10, transform=plt.gca().transAxes, ha='right')
+
 
     # Show the plot
     plt.legend()
