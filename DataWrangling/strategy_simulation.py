@@ -85,7 +85,7 @@ class Quote:
         print(f"No quote found for the following date: {self.date}. Certainly due to vacation. Incremeneting by 1 day...")
         self.date = self.date + one_day
 
-        log_message(f"New business day {self.date}")
+        # log_message(f"New business day {self.date}")
 
         qu = f'SELECT * FROM marketdata.{self.SE}_20 Where Symbol = "{self.ticker}" and Date = "{self.date}"'
         res = db_acc_obj.exc_query(db_name='marketdata', 
@@ -226,9 +226,14 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> No
     plt.hist(df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"], bins=50)
 
     # Calculate the mean of "priceD_plus{N_DAYS_INTERVAL}_evol"
+    temp_series = pd.to_numeric(df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"], errors='coerce')
+    df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"] = temp_series.dropna()
+    print(df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"])
+
     mean_val = df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"].mean()
     cache.update_cache_field("return_ptf", mean_val)
     log_message(f"The average return is {mean_val}% between {START_DATE_STR} and {cache.get_cache_field('n_last_bd')}")
+    log_message(f"The return of the sp500 for the same time interval is {cache.get_cache_field('return_sp')}")
 
     # Add a vertical line for the mean
     plt.axvline(mean_val, color="red", linestyle="--", label=f"Infocom's return: {round(mean_val,4 )} %")
@@ -300,17 +305,23 @@ if __name__ == '__main__':
     DF_SIGNALS  = get_signals()
     cache.update_cache_field("n_interval", N_DAYS_INTERVAL)
 
-    dates = filter_dates('2023-07-03', '2023-07-31', DF_SIGNALS['SignalDate'].unique())
+
+    #dates = filter_dates('2023-06-01', '2023-07-31', DF_SIGNALS['SignalDate'].unique())
+    dates = filter_dates('2023-06-28', '2023-06-28', DF_SIGNALS['SignalDate'].unique()) # supposed bug
+    
+    log_message(f"Starting dates taken: {dates}")
     for START_DATE in dates:
-        START_DATE_STR = START_DATE.strftime('%Y-%m-%d')
-        cache.update_cache_field("start_date", START_DATE_STR)
-        end_date = START_DATE + timedelta(days=N_DAYS_INTERVAL)
-        end_date_string = end_date.strftime("%Y-%m-%d")
-        cache.update_cache_field("end_date", end_date_string)
+        try:
+            START_DATE_STR = START_DATE.strftime('%Y-%m-%d')
+            cache.update_cache_field("start_date", START_DATE_STR)
+            end_date = START_DATE + timedelta(days=N_DAYS_INTERVAL)
+            end_date_string = end_date.strftime("%Y-%m-%d")
+            cache.update_cache_field("end_date", end_date_string)
 
-        log_message(f"Launching the simulation with real historical data...")
-        log_message(f"Choosen signal date is {START_DATE}")
-        log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
-        main()
-        cache.save(f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.json")
-
+            log_message(f"Launching the simulation with real historical data...")
+            log_message(f"Choosen signal date is {START_DATE}")
+            log_message(f"The agent decided to take an interval of {N_DAYS_INTERVAL} days. Therefore, the exit trade date would be: {end_date}")
+            main()
+            cache.save(f"output/{START_DATE_STR}/signal_{START_DATE_STR}_{N_DAYS_INTERVAL}_days_interval.json")
+        except Exception as e:
+            log_message(f"Issue with the following date: {START_DATE}. Exception: {e}")

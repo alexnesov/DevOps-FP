@@ -38,9 +38,12 @@ def main():
     ohlc_nyse   = ohlc_nyse.loc[ohlc_nyse['SE'] == "NYSE"].drop(columns=['SE'])
     ohlc_nasdaq = ohlc_nasdaq.loc[ohlc_nasdaq['SE'] == "NASDAQ"].drop(columns=['SE'])
 
-    ohlc_nyse.to_csv(f'/home/ubuntu/eoddata/downloads/NYSE_15/NYSE_{today}.csv', index=False)
-    ohlc_nasdaq.to_csv(f'/home/ubuntu/eoddata/downloads/NASDAQ_15/NASDAQ_{today}.csv', index=False)
-        
+    try:
+        ohlc_nyse.to_csv(f'/home/ubuntu/eoddata/downloads/NYSE_20/NYSE_{today}.csv', index=False)
+        ohlc_nasdaq.to_csv(f'/home/ubuntu/eoddata/downloads/NASDAQ_20/NASDAQ_{today}.csv', index=False)
+    except:
+        ohlc_nyse.to_csv(f'EC2_version/eoddata/downloads/NYSE_20/NYSE_{today}.csv', index=False)
+        ohlc_nasdaq.to_csv(f'EC2_version/eoddata/downloads/NASDAQ_20/NASDAQ_{today}.csv', index=False)
 
 if __name__ == '__main__':
     main()

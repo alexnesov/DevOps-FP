@@ -85,18 +85,35 @@ if __name__ == '__main__':
     plt.plot(x_vals, sp500Evol_kde(x_vals), color='red', label='sp500Evol Density')
     plt.plot(x_vals, ptfEvol_kde(x_vals), color='green', label='ptfEvol Density')
 
-
-    # Calculate and annotate skewness and kurtosis
+    # Calculate statistics
     sp500_skew = skew(sp500Evol_data)
     sp500_kurt = kurtosis(sp500Evol_data)
     ptf_skew = skew(ptfEvol_data)
     ptf_kurt = kurtosis(ptfEvol_data)
+    sp500_iqr = np.percentile(sp500Evol_data, 75) - np.percentile(sp500Evol_data, 25)
+    ptf_iqr = np.percentile(ptfEvol_data, 75) - np.percentile(ptfEvol_data, 25)
+    sp500_median = np.median(sp500Evol_data)
+    ptf_median = np.median(ptfEvol_data)
 
-    plt.text(0.23, 0.9, f'Skew (sp500Evol): {sp500_skew:.2f}', color='red', fontsize=10, transform=plt.gca().transAxes, ha='right')
-    plt.text(0.23, 0.85, f'Kurtosis (sp500Evol): {sp500_kurt:.2f}', color='red', fontsize=10, transform=plt.gca().transAxes, ha='right')
-    plt.text(0.23, 0.8, f'Skew (ptfEvol): {ptf_skew:.2f}', color='green', fontsize=10, transform=plt.gca().transAxes, ha='right')
-    plt.text(0.23, 0.75, f'Kurtosis (ptfEvol): {ptf_kurt:.2f}', color='green', fontsize=10, transform=plt.gca().transAxes, ha='right')
+    # Annotate statistics on the left side
+    plt.text(0.05, 0.9, f'Skew (sp500Evol): {sp500_skew:.2f}', color='red', fontsize=10, transform=plt.gca().transAxes, ha='left')
+    plt.text(0.05, 0.85, f'Kurtosis (sp500Evol): {sp500_kurt:.2f}', color='red', fontsize=10, transform=plt.gca().transAxes, ha='left')
+    plt.text(0.05, 0.8, f'IQR (sp500Evol): {sp500_iqr:.2f}', color='red', fontsize=10, transform=plt.gca().transAxes, ha='left')
+    plt.text(0.05, 0.75, f'Median (sp500Evol): {sp500_median:.2f}', color='red', fontsize=10, transform=plt.gca().transAxes, ha='left')
+    plt.text(0.05, 0.7, f'Skew (ptfEvol): {ptf_skew:.2f}', color='green', fontsize=10, transform=plt.gca().transAxes, ha='left')
+    plt.text(0.05, 0.65, f'Kurtosis (ptfEvol): {ptf_kurt:.2f}', color='green', fontsize=10, transform=plt.gca().transAxes, ha='left')
+    plt.text(0.05, 0.6, f'IQR (ptfEvol): {ptf_iqr:.2f}', color='green', fontsize=10, transform=plt.gca().transAxes, ha='left')
+    plt.text(0.05, 0.55, f'Median (ptfEvol): {ptf_median:.2f}', color='green', fontsize=10, transform=plt.gca().transAxes, ha='left')
 
+
+    # Remove top and right spines
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['right'].set_visible(False)
+
+
+    plt.legend(frameon=False)
+    # Add horizontal grid lines
+    plt.gca().yaxis.grid(True)
 
     # Show the plot
     plt.legend()

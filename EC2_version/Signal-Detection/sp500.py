@@ -38,7 +38,7 @@ def create_dataframe(data_list):
 def main():
     response = requests.get(f"https://api.twelvedata.com/time_series?apikey={TWELVE_KEY}&interval=1day&symbol=SPX&start_date={yesterday}&end_date={today}&format=JSON&type=index")
     data = response.json()
-    print(data)
+    print("data: ", data)
     list_values = list(data.values())[1]
     df = create_dataframe(list_values).rename(columns=spColNames)
 
@@ -48,3 +48,4 @@ def main():
 if __name__ == "__main__":
     df = main()
     dfToRDS(df=df, table='sp500', db_name='marketdata')
+    print("Data sent")
