@@ -10,6 +10,8 @@ from typing import List
 import os
 import matplotlib.pyplot as plt
 import yfinance as yf
+from scipy.stats import norm, skew, kurtosis
+import numpy as np
 
 
 
@@ -220,10 +222,33 @@ def transform_dataframe() -> pd.DataFrame:
 
 def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> None:
 
+    data = df_filtered_penny['priceD_2_evol']
+
+
+    print("Entered in plot_histogram_returns")
+    print(df_filtered_penny)
+    
+    skewness = skew(data)
+    kurtosis_val = kurtosis(data)
+
     plt.style.use('dark_background')
 
     ##### Plot the distribution of "priceD_plus{N_DAYS_INTERVAL}_evol"
-    plt.hist(df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"], bins=50)
+    plt.hist(df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"], bins=100)
+
+
+    # Fit a normal distribution to the data
+    mu, std = norm.fit(data)
+    x = np.linspace(data.min(), data.max(), 100)
+    pdf = norm.pdf(x, mu, std)
+
+    # Plot the fitted PDF
+    plt.plot(x, pdf, 'r', label='Fitted Normal PDF')
+
+    # Calculate other statistics
+    mean_val = np.mean(data)
+    cache.update_cache_field("skewness", skewness)
+    cache.update_cache_field("kurtosis_val", kurtosis_val)
 
     # Calculate the mean of "priceD_plus{N_DAYS_INTERVAL}_evol"
     temp_series = pd.to_numeric(df_filtered_penny[f"priceD_{N_DAYS_INTERVAL}_evol"], errors='coerce')
@@ -244,6 +269,11 @@ def plot_histogram_returns(df_filtered_penny: pd.DataFrame, spevol: float) -> No
     plt.ylabel("Frequency")
     plt.title(f"Distribution of Returns {START_DATE_STR} + {N_DAYS_INTERVAL} days")
     plt.legend()
+
+    # Add skewness and kurtosis annotations below existing annotations
+    plt.text(0.7, 0.1, f"Skewness: {round(skewness, 4)}", transform=plt.gca().transAxes)
+    plt.text(0.7, 0.05, f"Kurtosis: {round(kurtosis_val, 4)}", transform=plt.gca().transAxes)
+
 
     # Save the plot to the specified file path
     plt.savefig(f"output/{START_DATE_STR}/plot_signal{cache.get_cache_field('start_date')}_d_{cache.get_cache_field('n_interval')}")
@@ -306,8 +336,8 @@ if __name__ == '__main__':
     cache.update_cache_field("n_interval", N_DAYS_INTERVAL)
 
 
-    #dates = filter_dates('2023-06-01', '2023-07-31', DF_SIGNALS['SignalDate'].unique())
-    dates = filter_dates('2023-06-28', '2023-06-28', DF_SIGNALS['SignalDate'].unique()) # supposed bug
+    dates = filter_dates('2023-06-28', '2023-07-31', DF_SIGNALS['SignalDate'].unique()) # WORKING
+    # dates = filter_dates('2023-01-02', '2023-06-05', DF_SIGNALS['SignalDate'].unique()) # supposed bug
     
     log_message(f"Starting dates taken: {dates}")
     for START_DATE in dates:

@@ -2,9 +2,6 @@ import pandas as pd
 import json
 import os
 from scipy.stats import ttest_1samp
-import plotly.graph_objects as go
-import seaborn as sns
-
 
 def get_all_folders(directory_path):
     # List all entries in the directory
@@ -15,14 +12,12 @@ def get_all_folders(directory_path):
     
     return folders
 
-
 def order_folders_by_date(base_path, folder_names):
     # Sort the folder names by date
     sorted_folders = sorted(folder_names, key=lambda x: (int(x.split('-')[0]), int(x.split('-')[1]), int(x.split('-')[2])))
     
     # Return the full paths
     return [os.path.join(base_path, folder) for folder in sorted_folders]
-
 
 def find_json_files(folder_path):
     json_files = []
@@ -33,7 +28,6 @@ def find_json_files(folder_path):
                 json_files.append(os.path.join(root, file))
 
     return json_files
-
 
 
 if __name__ == '__main__':
@@ -47,37 +41,39 @@ if __name__ == '__main__':
 
     for path in ordered_paths:
         print(path)
-        
-        json_path = find_json_files(path)[0]
+        try: 
+            json_path = find_json_files(path)[0]
+        except IndexError:
+            continue
         
         with open(json_path, 'r') as file:
             data = json.load(file)
 
-
         selected_data = {
+            'end_date': [data['end_date']],
             'n_last_bd': [data['n_last_bd']],
             'return_ptf': [data['return_ptf']],
             'return_sp': [data['return_sp']]
         }
 
+        # TODO: if n_last_bd is same, then only take first one
 
         new_dataframe = pd.DataFrame(selected_data)
 
         empty_dataframe = pd.concat([empty_dataframe, new_dataframe], ignore_index=True)
 
 
+
         empty_dataframe['diff'] = empty_dataframe['return_ptf'] - empty_dataframe['return_sp']
 
         print(empty_dataframe)
 
-
+        # In the context of shorting, does a high kurtosis of returns imply that placing a stop loss on the beginnig of a rise, then placing a long position leans that  - on average - we will winn more?
 
         print(f"On {len(empty_dataframe)} days of position closed (trade executed), {(empty_dataframe['return_ptf'] < 0).sum()} were negative (winning for a short strategy)")
         factor = (empty_dataframe['return_ptf'] < 0).sum() / len(empty_dataframe)
         print(f"{round(factor,2)}% of the position closed were winning.")
         print(f"Average win (by shorting) {round(-empty_dataframe['diff'].mean(),2)}% for 2 holding days.")
-
-
 
         diff_data = empty_dataframe['diff']
                 # Perform the paired t-test
