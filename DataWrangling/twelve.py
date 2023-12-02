@@ -11,7 +11,6 @@ today       = datetime.today() - timedelta(1)
 today       = str(today.strftime('%Y-%m-%d'))
 api_key     = os.getenv('twelve_key')
 
-SE = "NASDAQ"
 
 def remove_comma(file_path: str):
     with open(file_path, "r") as file:
@@ -165,12 +164,13 @@ def send_rds_all_csv():
 
 
 if __name__ == '__main__':
-    """
+    SE = "NASDAQ"
     initialize_files()
     list_stock = pd.read_csv(f"/home/nesov/Programmation/DevOps-FP/DataWrangling/{SE}_list.csv")["Symbol"].to_list()
     filtered_list = [item for item in list_stock if "-" not in str(item) and "." not in str(item)]
     time.sleep(2)
     df = main(filtered_list, SE)
-    """
 
     # concatenate_by_year()
+
+

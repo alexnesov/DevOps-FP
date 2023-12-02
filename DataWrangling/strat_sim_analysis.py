@@ -69,7 +69,6 @@ if __name__ == '__main__':
         print(empty_dataframe)
 
         # In the context of shorting, does a high kurtosis of returns imply that placing a stop loss on the beginnig of a rise, then placing a long position leans that  - on average - we will winn more?
-
         print(f"On {len(empty_dataframe)} days of position closed (trade executed), {(empty_dataframe['return_ptf'] < 0).sum()} were negative (winning for a short strategy)")
         factor = (empty_dataframe['return_ptf'] < 0).sum() / len(empty_dataframe)
         print(f"{round(factor,2)}% of the position closed were winning.")
