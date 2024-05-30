@@ -4,6 +4,8 @@ DataWrangling/HistoricalData/
 DataWrangling/HistoricalData/*
 
 output/
+output/*
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
